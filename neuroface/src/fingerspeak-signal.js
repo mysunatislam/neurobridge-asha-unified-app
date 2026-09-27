@@ -125,13 +125,13 @@
   PoseTracker.prototype.update = function (hands, t) {
     var seen = new Set(), self = this;
     var result = hands.map(function (hand, i) {
-      var key = hand.label || 'slot-' + i, pose = classifyPose(hand.lm);
+      var key = hand.id || hand.label || 'slot-' + i, pose = classifyPose(hand.lm);
       seen.add(key);
       var state = self.states.get(key);
       if (!state || state.candidate !== pose.name) state = { candidate: pose.name, since: t, stable: 'Observing…' };
       if (t - state.since >= self.holdMs) state.stable = pose.name;
       self.states.set(key, state);
-      return { label: hand.label ? hand.label[0].toUpperCase() + hand.label.slice(1) : 'Hand ' + (i + 1),
+      return { id: key, label: hand.label ? hand.label[0].toUpperCase() + hand.label.slice(1) : 'Hand ' + (i + 1),
         pose: state.stable, openness: pose.openness };
     });
     for (var key of this.states.keys()) if (!seen.has(key)) this.states.delete(key);
