@@ -23,6 +23,7 @@ p.on("pageerror", (e) => errors.push(e.message));
 await p.goto("http://127.0.0.1:4180/");
 await p.screenshot({ path: "artifacts/welcome-desktop.png", fullPage: true });
 await p.getByRole("button", { name: "Set up with a caregiver" }).click();
+await p.locator("#supportSkip").click();
 await p.locator("[name=label]").fill("QA care circle");
 await p.locator("[name=eyes]").selectOption("reliable");
 await p.locator("[name=lips]").selectOption("reliable");

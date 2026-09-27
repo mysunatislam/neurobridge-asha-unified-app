@@ -1,6 +1,12 @@
 import { Perception } from "./perception.js";
 import { GuidedCalibration } from "./calibration.js";
 import { RequestGate, recommendations, clamp } from "./signals.js";
+import {
+  supportOptions,
+  supportGoals,
+  normalizeSupport,
+  supportSummary,
+} from "./support-profile.js";
 const $ = (id) => document.getElementById(id),
   esc = (x) =>
     String(x ?? "").replace(
@@ -29,7 +35,7 @@ const read = (k, f) => {
   save = (k, v) => localStorage.setItem("asha_live_" + k, JSON.stringify(v));
 const names = {
   companion: "Asha companion",
-  facespeak: "FaceSpeak",
+  facespeak: "NeuroFace Sense",
   fingerspeak: "FingerSpeak",
   vitalsense: "VitalSense",
   senseassist: "SenseAssist",
@@ -296,9 +302,47 @@ $("assessmentFields").innerHTML = Object.entries(fields)
       `<label class="field">${n}<select name="${k}"><option value="none">Not available</option><option value="limited">Some movement / speech</option><option value="reliable">Comfortable & reliable</option></select></label>`,
   )
   .join("");
+for (const [id, choices, name] of [
+  ["supportOptions", supportOptions, "supportCategory"],
+  ["supportGoals", supportGoals, "supportGoal"],
+]) {
+  $(id).innerHTML = choices
+    .map(
+      ([value, label]) =>
+        `<label class="check support-choice"><input type="checkbox" name="${name}" value="${value}"><span>${esc(label)}</span></label>`,
+    )
+    .join("");
+}
+function supportData() {
+  return normalizeSupport({
+    categories: [
+      ...$("assessmentForm").querySelectorAll(
+        '[name="supportCategory"]:checked',
+      ),
+    ].map((x) => x.value),
+    goals: [
+      ...$("assessmentForm").querySelectorAll('[name="supportGoal"]:checked'),
+    ].map((x) => x.value),
+    note: $("assessmentForm").elements.supportNote.value,
+  });
+}
+$("supportNext").onclick = () => step(1);
+$("supportSkip").onclick = () => {
+  $("setupStep0")
+    .querySelectorAll('input[type="checkbox"]')
+    .forEach((x) => {
+      x.checked = false;
+    });
+  $("assessmentForm").elements.supportNote.value = "";
+  step(1);
+};
+$("supportBack").onclick = () => step(0);
 function startSetup(edit = false) {
   editing = edit;
   $("assessmentForm").reset();
+  $("assessmentForm").querySelector('[type="submit"]').textContent = edit
+    ? "Save updated assessment →"
+    : "Create private care circle →";
   if (edit && careData) {
     const f = $("assessmentForm");
     f.elements.label.value = careData.profile.label;
@@ -306,20 +350,35 @@ function startSetup(edit = false) {
       f.elements[k].value = careData.profile.assessment[k];
     f.elements.canSee.checked = careData.profile.assessment.canSee;
     f.elements.canHear.checked = careData.profile.assessment.canHear;
+    const context = normalizeSupport(careData.profile.supportContext);
+    f.querySelectorAll('[name="supportCategory"]').forEach((x) => {
+      x.checked = context.categories.includes(x.value);
+    });
+    f.querySelectorAll('[name="supportGoal"]').forEach((x) => {
+      x.checked = context.goals.includes(x.value);
+    });
+    f.elements.supportNote.value = context.note;
+    f.elements.voice.value = careData.profile.voice?.name || "";
+    f.elements.rate.value = careData.profile.voice?.rate || 0.9;
   }
-  step(1);
+  step(0);
   show("setup");
 }
 function step(n) {
-  [1, 2, 3].forEach((i) => ($("setupStep" + i).hidden = i !== n));
-  $("stepNumber").textContent = `0${n} / 03`;
+  [0, 1, 2, 3].forEach((i) => ($("setupStep" + i).hidden = i !== n));
+  $("stepNumber").textContent = `0${n + 1} / 04`;
   $("setupTitle").textContent =
-    n === 1
-      ? "Let’s find their way to communicate."
-      : n === 2
-        ? "Support that fits the person."
-        : "Ready for both phones.";
+    n === 0
+      ? "Tell Asha about you."
+      : n === 1
+        ? "Let’s find their way to communicate."
+        : n === 2
+          ? "Support that fits the person."
+          : "Ready for both phones.";
   $("setupError").textContent = "";
+  $("setupTitle").setAttribute("tabindex", "-1");
+  $("setupTitle").focus({ preventScroll: true });
+  window.scrollTo({ top: 0, behavior: "instant" });
 }
 function assessmentData() {
   const f = $("assessmentForm"),
@@ -340,6 +399,8 @@ $("assessmentNext").onclick = () => {
   $("recommendTags").innerHTML = [...r, "posture", "vitalsense"]
     .map((n) => `<span class="tag">${names[n]}</span>`)
     .join("");
+  $("supportReview").textContent =
+    "Your optional support profile: " + supportSummary(supportData());
   step(2);
 };
 $("assessmentBack").onclick = () => step(1);
@@ -354,6 +415,7 @@ $("assessmentForm").onsubmit = async (e) => {
         action: editing ? "update" : "create",
         label: f.elements.label.value,
         assessment: a,
+        supportContext: supportData(),
         voice: {
           name: $("setupVoice").value,
           rate: Number(f.elements.rate.value),
@@ -477,14 +539,22 @@ function confirmationHint() {
     return "When Asha asks a question, make one deliberate blink to say yes.";
   return "Calibrate a comfortable gesture in Details for hands-free responses. Touch always works.";
 }
+let screenLock;
 function monitorUI(on) {
   $("startMonitoring").hidden = on;
   $("pauseMonitoring").hidden = !on;
   $("studioStart").textContent = on ? "Pause camera" : "Start camera";
   $("cameraPlaceholder").hidden = on;
+  $("activeModules").textContent = on
+    ? "Monitoring together: NeuroFace Sense · FingerSpeak · VitalSense · Posture. See Details for signal status."
+    : "NeuroFace Sense · FingerSpeak · VitalSense · Posture — paused. Start support to resume.";
   if (!on) {
+    screenLock?.release().catch(() => {});
+    screenLock = null;
     $("fpsBadge").textContent = "Paused";
     $("cameraPlaceholder").textContent = "Monitoring paused";
+    $("liveSummary").textContent =
+      "All camera sensing paused. SenseAssist and Asha remain available.";
   }
 }
 async function startMonitor() {
@@ -502,7 +572,7 @@ async function startMonitor() {
     await perception.start();
     monitorUI(true);
     try {
-      await navigator.wakeLock?.request("screen");
+      screenLock = await navigator.wakeLock?.request("screen");
     } catch {}
     say(
       "I’m here with you. " +
@@ -905,6 +975,13 @@ async function pollCare() {
     $("careConnection").textContent = "Live connection";
     $("careStatus").innerHTML =
       `<div class="section-heading"><div><span class="eyebrow">ASSIGNED PATIENT</span><h2>${esc(d.profile.label)}</h2></div><span class="pill">${age < 35000 ? "Online" : "Not active"}</span></div><p class="muted small">Patient ID ${esc(d.profile.patientId)} · ${s ? "Last update " + new Date(s.at).toLocaleTimeString() : "Waiting for the patient device"}</p><div class="metrics"><div class="metric"><small>Interface</small><strong>${esc(names[s?.module] || "—")}</strong></div><div class="metric"><small>Posture</small><strong>${esc(s?.posture || "—")}</strong></div><div class="metric"><small>Camera pulse estimate</small><strong>${s?.bpm && age < 35000 ? s.bpm + " bpm" : "—"}</strong></div></div><div class="actions"><button id="careEdit" class="text-button">Review assessment →</button>${c.patientToken ? '<button id="sharePatient" class="text-button">Copy patient link →</button>' : ""}</div>`;
+    const support = document.createElement("p");
+    support.className = "small muted";
+    support.id = "careSupportProfile";
+    support.textContent =
+      "Self-described support needs: " +
+      supportSummary(d.profile.supportContext);
+    $("careStatus").append(support);
     $("careEdit").onclick = () => startSetup(true);
     if ($("sharePatient"))
       $("sharePatient").onclick = () =>
@@ -1264,6 +1341,9 @@ function renderModule() {
   if (module === "fingerspeak") {
     html = `<div class="card"><span class="eyebrow">BOTH HANDS, YOUR CHOICE</span><h2>FingerSpeak</h2><p class="muted">Both hands are tracked independently. Anyone can explore this interface, regardless of assessment. Familiar poses are detected automatically; a personal mapping needs three distinct holds.</p><div id="handReadings"><div class="empty">Bring one or both hands into view.</div></div><label class="field">Gesture<select id="handPose"><option>Open palm</option><option>Index extended</option><option>Two fingers extended</option><option>Three fingers extended</option><option>Closed fingers</option></select></label><label class="field">Meaning<select id="handMeaning"><option value="help">Caregiver</option><option value="water">Water</option><option value="toilet">Toilet</option><option value="food">Food</option><option value="comfort">Comfort</option></select></label><button id="trainHand" class="primary">Learn this gesture</button><p id="handTrainStatus" class="small muted">Hold for a moment, relax, and repeat three times. Then repeat a mapped gesture to confirm a proposed request.</p><div id="savedHands"></div></div>`;
   }
+  if (module === "facespeak") {
+    html += `<div class="card"><span class="eyebrow">NEUROFACE SENSE · LIVE OBSERVATIONS</span><h2>Lips, head and expression</h2><div class="metrics">${metric("Left eye EAR", "earLeft")}${metric("Right eye EAR", "earRight")}${metric("Lip opening · MAR", "lipValue")}${metric("Head yaw", "yawValue")}${metric("Head pitch", "pitchValue")}${metric("Head roll", "rollValue")}</div>${chart("lipChart", "LIP OPENING")}${chart("yawChart", "HEAD TURN · YAW")}${chart("pitchChart", "HEAD TILT · PITCH")}<h3>Facial movement signals</h3><div id="expressionReadings"></div><p class="small muted">Model expression strengths, not percentages of facial control or clinical muscle scores. Missing tracking is shown as unavailable. A sustained change prompts a check-in, not an automatic emergency call.</p></div>`;
+  }
   if (module === "vitalsense") {
     html = `<div class="card"><span class="eyebrow">LOCAL CAMERA SIGNAL</span><h2>VitalSense</h2><p class="muted">Sit comfortably in steady light. A small forehead region supplies a color signal; motion and weak signals are rejected.</p><div class="metrics">${metric("Camera pulse estimate", "pulseValue")}${metric("Signal quality", "pulseQuality")}${metric("Window", "pulseWindow", "20 sec")}</div>${chart("pulseChart", "COLOR PULSE SIGNAL")}<p id="pulseReason" class="muted">Start the camera and allow 20 seconds.</p><p class="small muted">Experimental pulse trend, not a medical vital measurement. This camera cannot measure blood pressure, oxygen saturation or temperature. No emergency action uses this estimate.</p></div>`;
   }
@@ -1330,16 +1410,53 @@ document.querySelectorAll("[data-module]").forEach(
     }),
 );
 function paint(s) {
-  if (!s.raw) return;
+  if (!s.raw || !perception.running) return;
   $("fpsBadge").textContent = s.latency + " ms";
   $("liveSummary").innerHTML =
-    `<div><span>Face</span><strong>${s.raw.facePresent ? "Tracked" : "Not visible"}</strong></div><div><span>Hands</span><strong>${s.hands.length} / 2</strong></div><div><span>Body</span><strong>${esc(s.posture?.label || "Not visible")}</strong></div><div><span>Calibration</span><strong>${trained ? "Personal" : "Needed for commands"}</strong></div>`;
+    `<div><span>NeuroFace Sense</span><strong>${s.raw.facePresent ? "Face tracked" : "Searching for face"}</strong></div><div><span>FingerSpeak</span><strong>${s.hands.length} / 2 hands tracked</strong></div><div><span>Posture</span><strong>${esc(s.posture?.label || "Searching for body")}</strong></div><div><span>VitalSense</span><strong>${s.pulse?.bpm ? s.pulse.bpm + " bpm · estimate" : esc(s.pulse?.reason || "Collecting signal")}</strong></div><div><span>FaceSpeak calibration</span><strong>${trained ? "Personal" : "Needed for commands"}</strong></div>`;
+  $("liveSummary").dataset.cycles = JSON.stringify(s.cycles || {});
   if (view !== "details") return;
   const text = (id, v) => {
     if ($(id)) $(id).textContent = v;
   };
   text("blinkCount", s.blinks);
   text("earValue", s.raw.earMean?.toFixed(2) || "—");
+  for (const [id, key, unit] of [
+    ["earLeft", "earLeft", ""],
+    ["earRight", "earRight", ""],
+    ["lipValue", "mar", ""],
+    ["yawValue", "yaw", "°"],
+    ["pitchValue", "pitch", "°"],
+    ["rollValue", "roll", "°"],
+  ]) {
+    text(
+      id,
+      Number.isFinite(s.raw[key])
+        ? s.raw[key].toFixed(unit ? 0 : 2) + unit
+        : "—",
+    );
+  }
+  if ($("expressionReadings")) {
+    const bs = s.blendshapes || {};
+    const values = [
+      ["Inner brow raise", ["browInnerUp"]],
+      ["Brow lowering", ["browDownLeft", "browDownRight"]],
+      ["Cheek raise", ["cheekSquintLeft", "cheekSquintRight"]],
+      ["Smile", ["mouthSmileLeft", "mouthSmileRight"]],
+      ["Lip stretch", ["mouthStretchLeft", "mouthStretchRight"]],
+      ["Jaw opening", ["jawOpen"]],
+    ];
+    $("expressionReadings").innerHTML = values
+      .map(([label, keys]) => {
+        const value = keys.every((k) => Number.isFinite(bs[k]))
+          ? Math.round(
+              (100 * keys.reduce((v, k) => v + bs[k], 0)) / keys.length,
+            )
+          : null;
+        return `<div class="bar-row"><span>${label}</span><progress ${value === null ? 'value="0"' : `value="${value}"`} max="100" aria-label="${label}"></progress><span>${value === null ? "—" : value + "%"}</span></div>`;
+      })
+      .join("");
+  }
   text(
     "smileValue",
     s.face?.smile ? Math.round(s.face.smile.smileIntensity * 100) + "%" : "—",
@@ -1372,6 +1489,9 @@ function paint(s) {
       : '<div class="empty">Bring one or both hands into view.</div>';
   drawChart("eyeChart", "ear", "#448e85");
   drawChart("smileChart", "smile", "#9a7fba");
+  drawChart("lipChart", "lip", "#b27077");
+  drawChart("yawChart", "yaw", "#448e85");
+  drawChart("pitchChart", "pitch", "#9a7fba");
   drawChart("pulseChart", "pulse", "#448e85");
   drawChart("poseChart", "pose", "#9a7fba");
 }
@@ -1530,6 +1650,22 @@ async function initialize() {
     )
       show("caregiver");
     else if (patient) await openPatient();
+    const requestedModule = u.searchParams.get("module");
+    if (
+      profile &&
+      view !== "caregiver" &&
+      [
+        "facespeak",
+        "fingerspeak",
+        "vitalsense",
+        "senseassist",
+        "posture",
+      ].includes(requestedModule)
+    ) {
+      module = requestedModule;
+      $("modeBadge").textContent = names[module];
+      show("details");
+    }
   } catch (e) {
     toast(e.message);
   }

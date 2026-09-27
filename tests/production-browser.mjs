@@ -18,6 +18,17 @@ let data;
 try {
   await p.goto(base);
   await p.getByRole("button", { name: "Set up with a caregiver" }).click();
+  await p.locator('[name="supportCategory"][value="stroke"]').check();
+  await p.locator('[name="supportGoal"][value="speech"]').check();
+  await p.screenshot({
+    path: "artifacts/support-profile-mobile.png",
+    fullPage: true,
+  });
+  assert.equal(
+    await p.evaluate(() => document.documentElement.scrollWidth > innerWidth),
+    false,
+  );
+  await p.locator("#supportNext").click();
   await p.locator("[name=label]").fill("Two-phone verification");
   await p.locator("[name=eyes]").selectOption("reliable");
   await p.locator("[name=lips]").selectOption("reliable");
@@ -31,12 +42,33 @@ try {
   const r = await response;
   data = await r.json();
   assert.equal(r.status(), 200);
+  assert.deepEqual(data.supportContext.categories, ["stroke"]);
+  assert.deepEqual(data.supportContext.goals, ["speech"]);
+  assert.ok(data.recommendation.suggested.includes("senseassist"));
   await p.locator("#continuePatient").click();
   await p.locator("#patient:not([hidden])").waitFor();
   await c.goto(
     base +
       `?role=caregiver#patientId=${data.patientId}&token=${data.caregiverToken}`,
   );
+  await c.locator("#caregiver:not([hidden])").waitFor();
+  await c.waitForFunction(
+    () =>
+      document
+        .getElementById("careSupportProfile")
+        ?.textContent.includes("Post-stroke recovery"),
+    null,
+    { timeout: 45000 },
+  );
+  await c.locator("#careEdit").click();
+  assert.equal(
+    await c.locator('[name="supportCategory"][value="stroke"]').isChecked(),
+    true,
+  );
+  await c.locator("#supportNext").click();
+  await c.locator("#assessmentNext").click();
+  await c.locator('[name="consent"]').check();
+  await c.getByRole("button", { name: "Save updated assessment" }).click();
   await c.locator("#caregiver:not([hidden])").waitFor();
   await p.locator("[data-need=water]").click();
   await p.waitForTimeout(750);
@@ -74,7 +106,7 @@ try {
     "posture",
   ]) {
     await p.locator(`[data-module=${module}]`).click();
-    assert.ok(await p.locator("#moduleContent h2").isVisible());
+    assert.ok(await p.locator("#moduleContent h2").first().isVisible());
   }
   await p.locator("#themeButton").click();
   await p.screenshot({
@@ -85,6 +117,7 @@ try {
     realPublicDeployment: true,
     patientRequestCaregiverAcknowledgment: true,
     allFiveModulesAccessible: true,
+    optionalProfilePersistedAndEditable: true,
     applicationErrors: errors,
     mobileOverflow: await p.evaluate(
       () => document.documentElement.scrollWidth > innerWidth,

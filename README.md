@@ -10,7 +10,7 @@ A new application built from the preserved `neurobridge-asha-unified-web` assets
 
 ## Two-phone walkthrough
 
-1. Open the main link and choose **Set up with a caregiver**. Select actual capabilities, including vision, hearing and speech. Speech support is suggested alongside other viable modes, not instead of them.
+1. Open the main link and choose **Set up with a caregiver**. On **Tell Asha about you**, optionally choose support needs or skip. Next select actual capabilities, including vision, hearing and speech. Speech support is suggested alongside other viable modes, not instead of them.
 2. Select **Next**, review the recommendation, and create a private care circle.
 3. Copy the **patient link** to the patient's phone and the **caregiver link** to the caregiver's phone. An ID alone cannot authorize access.
 4. On the patient phone choose **Start support**. Open **Details → Calibrate patient** for real measured facial calibration; unsupported movements can be skipped. FingerSpeak has its own three-hold gesture learning on the same camera.
@@ -21,6 +21,8 @@ A new application built from the preserved `neurobridge-asha-unified-web` assets
 
 - Clean light/dark responsive UI and installable PWA. Large controls, visible labels, keyboard focus, reduced-motion support, live status, movable floating Asha companion.
 - Capability assessment and recommendations without module access restrictions. Manual interface choice is always possible.
+- Optional “Tell Asha about you” setup: accident-related voice loss, ALS, stroke recovery, cerebral palsy, older-adult support, locked-in syndrome, autism, temporary voice loss or another reason. Multiple choices, goals, and skip are supported. This self-described context is editable by the caregiver and is never used to infer or limit capabilities.
+- NeuroFace Sense (including FaceSpeak calibration), FingerSpeak, VitalSense and posture remain enabled together on the shared camera, regardless of the open details tab. Live status distinguishes tracked signals from searching or weak signals. Facial expression values are model signals, never a percentage of the patient's ability.
 - One camera stream shared by face, two independent hands, local forehead color-pulse sampling, and body pose. Face processing gets priority; hand/pose inference is staggered in a classic web worker with GPU where supported and CPU/foreground fallbacks.
 - FaceSpeak: measured neutral baseline; three observed repetitions per selected blink/smile/pucker/nod/head-turn skill; only captured skills enabled; no timer-only gesture enrollment. Triple deliberate blink proposes water. Three left-return cycles propose food; right-return cycles propose toilet. A long trained pucker proposes comfort. Confirmation is a separately completed, trained gesture or touch.
 - FingerSpeak: two-hand pose recognition, openness indicators, personalized gesture-to-need mapping with three independent holds. Assessment never blocks this module.

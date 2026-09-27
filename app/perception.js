@@ -34,6 +34,7 @@ export class Perception extends EventTarget {
   }
   async start() {
     if (this.running) return;
+    this.cycles = { face: 0, hand: 0, pose: 0, pulse: 0 };
     this.emit("status", "Loading face, two-hand and pose models…");
     this.stream = await navigator.mediaDevices.getUserMedia({
       video: {
@@ -116,14 +117,25 @@ export class Perception extends EventTarget {
         outputFacialTransformationMatrixes: true,
       });
     }
-    this.hand = await V.HandLandmarker.createFromOptions(files, {
-      ...opts("../neuroface/models/hand_landmarker.task"),
-      numHands: 2,
-    });
-    this.pose = await V.PoseLandmarker.createFromOptions(files, {
-      ...opts("../models/pose_landmarker_lite.task"),
-      numPoses: 1,
-    });
+    const create = async (Type, model, extra) => {
+      const o = { ...opts(model), ...extra };
+      try {
+        return await Type.createFromOptions(files, o);
+      } catch {
+        o.baseOptions.delegate = "CPU";
+        return Type.createFromOptions(files, o);
+      }
+    };
+    this.hand = await create(
+      V.HandLandmarker,
+      "../neuroface/models/hand_landmarker.task",
+      { numHands: 2 },
+    );
+    this.pose = await create(
+      V.PoseLandmarker,
+      "../models/pose_landmarker_lite.task",
+      { numPoses: 1 },
+    );
     this.lastHand = 0;
     this.lastPose = 0;
   }
@@ -149,11 +161,12 @@ export class Perception extends EventTarget {
             face = this.face.detectForVideo(this.video, t);
           let hand = null,
             pose = null;
-          if (t - this.lastHand > 200) {
+          const handDue = (t - this.lastHand) / 250,
+            poseDue = (t - this.lastPose) / 500;
+          if (handDue >= 1 && handDue >= poseDue) {
             hand = this.hand.detectForVideo(this.video, t);
             this.lastHand = t;
-          }
-          if (t - this.lastPose > 250) {
+          } else if (poseDue >= 1) {
             pose = this.pose.detectForVideo(this.video, t);
             this.lastPose = t;
           }
@@ -186,15 +199,18 @@ export class Perception extends EventTarget {
   }
   result(d) {
     if (!this.running) return;
+    this.cycles.face++;
     const f = this.extractor.extract(d.face, this.video, d.t),
       r = this.engine.process({ ...f, commandsEnabled: false });
     this.faceResult = d.face;
     if (d.pose) {
+      this.cycles.pose++;
       this.poseResult = d.pose;
       this.posture = poseFeatures(d.pose.landmarks?.[0], this.posture);
       this.poseAt = d.t;
     }
     if (d.hand) {
+      this.cycles.hand++;
       this.handResult = d.hand;
       this.handTracks ??= new HandTracks();
       const hands = this.handTracks.update(
@@ -244,7 +260,15 @@ export class Perception extends EventTarget {
     )
       this.emit("cue", "face_change");
     this.samplePulse(d.face, f, d.t);
+    this.cycles.pulse++;
     this.snapshot = {
+      cycles: { ...this.cycles },
+      blendshapes: Object.fromEntries(
+        (d.face.faceBlendshapes?.[0]?.categories || []).map((c) => [
+          c.categoryName,
+          c.score,
+        ]),
+      ),
       raw: f,
       face: r,
       posture: this.posture,

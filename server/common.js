@@ -56,6 +56,7 @@ export const publicProfile = (p) => ({
   patientId: p.patientId,
   label: p.label,
   assessment: p.assessment,
+  supportContext: p.supportContext || { categories: [], goals: [], note: "" },
   voice: p.voice,
   recommendation: p.recommendation,
   createdAt: p.createdAt,

@@ -36,6 +36,48 @@
 * {
   box-sizing: border-box;
 }
+.support-fieldset {
+  border: 0;
+  padding: 0;
+  margin: 1.5rem 0;
+  min-width: 0;
+}
+.support-fieldset legend {
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+.support-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 0.65rem;
+}
+.support-choice {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+  padding: 1rem;
+  margin: 0 !important;
+  min-height: 64px;
+  cursor: pointer;
+}
+.support-choice:has(input:checked) {
+  background: var(--mint);
+  border-color: var(--accent);
+}
+.support-choice input {
+  flex: 0 0 auto;
+  accent-color: var(--accent);
+}
+.module-health {
+  margin: 0.9rem 0;
+}
+.module-health p {
+  margin: 0.4rem 0;
+  font-size: 0.82rem;
+}
+.module-health strong {
+  color: var(--ink);
+}
 body {
   margin: 0;
   background: var(--bg);
@@ -758,6 +800,17 @@ em {
 .bar-row progress {
   width: 100%;
   height: 8px;
+}
+#expressionReadings .bar-row {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr) 36px;
+  gap: 8px;
+}
+#expressionReadings .bar-row span {
+  width: auto;
+}
+#expressionReadings .bar-row span:last-child {
+  text-align: right;
 }
 .care-grid {
   display: grid;

@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import webpush from "web-push";
+import { normalizeSupport } from "../app/support-profile.js";
 import {
   begin,
   body,
@@ -33,12 +34,9 @@ export default async function handler(req, res) {
       const today = new Date().toISOString().slice(0, 10);
       const quota = await store.list(`asha-live/limits/${today}/${ip}/`, 15);
       if (quota.length >= 12)
-        return res
-          .status(429)
-          .json({
-            error:
-              "Daily setup limit reached. Reopen an existing private link.",
-          });
+        return res.status(429).json({
+          error: "Daily setup limit reached. Reopen an existing private link.",
+        });
       const id = randomBytes(12).toString("hex"),
         patientToken = randomBytes(32).toString("base64url"),
         caregiverToken = randomBytes(32).toString("base64url");
@@ -47,6 +45,7 @@ export default async function handler(req, res) {
         patientId: id,
         label: clean(b.label, 40) || "Patient",
         assessment: a,
+        supportContext: normalizeSupport(b.supportContext),
         voice: voice(b.voice),
         recommendation: recommend(a),
         patientHash: hash(patientToken),
@@ -81,6 +80,8 @@ export default async function handler(req, res) {
       return res.status(405).json({ error: "Method not allowed" });
     if (b.action === "update" && role === "caregiver") {
       p.assessment = assessment(b.assessment);
+      if (Object.hasOwn(b, "supportContext"))
+        p.supportContext = normalizeSupport(b.supportContext);
       p.recommendation = recommend(p.assessment);
       p.voice = voice(b.voice);
       p.label = clean(b.label, 40) || p.label;
@@ -188,11 +189,9 @@ export default async function handler(req, res) {
       .json({ error: "This action is not available for your role." });
   } catch (e) {
     console.error("session failure", e?.name);
-    res
-      .status(503)
-      .json({
-        error:
-          "Connection unavailable. Your request has not been confirmed as delivered. Please retry.",
-      });
+    res.status(503).json({
+      error:
+        "Connection unavailable. Your request has not been confirmed as delivered. Please retry.",
+    });
   }
 }

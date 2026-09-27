@@ -9,6 +9,7 @@
     <meta name="theme-color" content="#f5f4ef" />
     <title>Asha · Here with you</title>
     <link rel="manifest" href="./app.webmanifest" />
+    <link rel="apple-touch-icon" href="./icons/asha-192.png" />
     <link rel="icon" href="./app/icon.svg" />
     <link rel="stylesheet" href="./app/style.css" />
   </head>
@@ -78,7 +79,7 @@
       <section id="setup" class="view narrow" hidden>
         <button class="text-button" data-view="welcome">← Back</button>
         <div class="step-label">
-          CAREGIVER SETUP <span id="stepNumber">01 / 03</span>
+          CAREGIVER SETUP <span id="stepNumber">01 / 04</span>
         </div>
         <h1 id="setupTitle">Let’s find their way<br />to communicate.</h1>
         <p class="muted">
@@ -86,7 +87,49 @@
           interface.
         </p>
         <form id="assessmentForm">
-          <div id="setupStep1">
+          <div id="setupStep0">
+            <p class="lead">What kind of support do you need?</p>
+            <p class="muted">
+              Tell us in your own way. Choose any that fit, or skip this page. A
+              condition does not tell us what someone can do: we’ll ask about
+              comfortable movements next.
+            </p>
+            <fieldset class="support-fieldset">
+              <legend>
+                Your situation <span class="muted">(optional)</span>
+              </legend>
+              <div id="supportOptions" class="support-options"></div>
+            </fieldset>
+            <fieldset class="support-fieldset">
+              <legend>
+                What would you like help with?
+                <span class="muted">(optional)</span>
+              </legend>
+              <div id="supportGoals" class="support-options"></div>
+            </fieldset>
+            <label class="field"
+              >Anything you’d like Asha to know? (optional)
+              <textarea
+                name="supportNote"
+                maxlength="160"
+                placeholder="For example: Please speak slowly and give me time to respond."
+              ></textarea>
+            </label>
+            <p class="small muted">
+              Shared only with your care circle and, when enabled, cloud
+              assistance. Don’t include a full name, address, or medical
+              records. Nothing is saved until you agree on the review page.
+            </p>
+            <div class="setup-actions">
+              <button type="button" id="supportSkip" class="secondary">
+                Prefer not to say
+              </button>
+              <button type="button" id="supportNext" class="primary">
+                Next: comfortable movements →
+              </button>
+            </div>
+          </div>
+          <div id="setupStep1" hidden>
             <label class="field"
               >Patient nickname<input
                 name="label"
@@ -105,6 +148,9 @@
               >
             </div>
             <div class="setup-actions">
+              <button type="button" id="supportBack" class="secondary">
+                ← About you
+              </button>
               <button type="button" id="assessmentNext" class="primary">
                 Next: recommended support →
               </button>
@@ -116,6 +162,12 @@
               <h2 id="recommendTitle"></h2>
               <p id="recommendReason"></p>
               <div id="recommendTags" class="tags"></div>
+              <p id="supportReview" class="small muted"></p>
+              <p class="small muted">
+                NeuroFace Sense, FingerSpeak, VitalSense and posture sensing run
+                together while support is on. SenseAssist is available whenever
+                you want speech support. No interface is locked by your answers.
+              </p>
             </div>
             <div class="card">
               <h3>A familiar voice</h3>
@@ -139,9 +191,10 @@
             </div>
             <label class="check"
               ><input name="consent" type="checkbox" required /> I agree to
-              store this capability assessment and request history for 7 days.
-              Cloud assistance sends typed or recognized words, not camera
-              video.</label
+              store my optional support profile, capability assessment and
+              request history for 7 days and enable cloud assistance. Assistance
+              sends this profile and typed or recognized words, not camera
+              video. I can turn cloud assistance off in Settings.</label
             >
             <div class="setup-actions">
               <button type="button" id="assessmentBack" class="secondary">
@@ -219,6 +272,10 @@
               Camera stays on this device. Start support to enable movement
               sensing.
             </p>
+            <p id="activeModules" class="small muted">
+              NeuroFace Sense · FingerSpeak · VitalSense · Posture — ready when
+              support starts.
+            </p>
           </div>
           <div class="needs-panel">
             <div class="section-heading">
@@ -295,7 +352,7 @@
           </aside>
           <div class="module-panel">
             <nav id="moduleTabs" class="tabs" aria-label="Sensing modules">
-              <button data-module="facespeak">FaceSpeak</button
+              <button data-module="facespeak">NeuroFace Sense</button
               ><button data-module="fingerspeak">FingerSpeak</button
               ><button data-module="vitalsense">VitalSense</button
               ><button data-module="senseassist">SenseAssist</button
