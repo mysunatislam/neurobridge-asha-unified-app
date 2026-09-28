@@ -1014,6 +1014,7 @@ em {
   bottom: 100px;
   z-index: 50;
   touch-action: none;
+  pointer-events: none;
 }
 .asha-bubble button {
   padding: 0;
@@ -1025,6 +1026,7 @@ em {
   background: var(--lavender);
   position: relative;
   touch-action: none;
+  pointer-events: auto;
 }
 .asha-bubble img {
   width: 100%;

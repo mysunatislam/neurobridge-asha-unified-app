@@ -8,12 +8,8 @@ export class GuidedCalibration {
         still: true,
       },
     ];
-    if (a.eyes !== "none")
-      this.steps.push({
-        id: "blink",
-        label: "Blink deliberately, then fully reopen. Repeat three times.",
-        event: "BLINK_COMPLETED",
-      });
+    // Eye openness and blink counts remain observable without enrollment.
+    // Blinks are never a communication command or caregiver-call confirmation.
     if (a.lips !== "none")
       this.steps.push({
         id: "smile",
@@ -106,9 +102,7 @@ export class GuidedCalibration {
       const stats = C.summarize(this.frames),
         draft = { ...this.stages, [this.step.id]: { stats, events: [] } };
       const range =
-        this.step.id === "blink"
-          ? stats.earMean.p95 - stats.earMean.p5
-          : this.step.id === "smile"
+        this.step.id === "smile"
             ? Math.max(
                 stats.mouthSmileLeft.p95 - stats.mouthSmileLeft.p5,
                 stats.mouthSmileRight.p95 - stats.mouthSmileRight.p5,

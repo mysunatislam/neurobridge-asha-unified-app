@@ -56,7 +56,7 @@ test("neutral only captures live valid frames, no timer-only fake calibration", 
   assert.equal(c.index, 0);
   for (let t = 10000; t < 13500; t += 40) c.update(frame(t));
   assert.equal(c.index, 1);
-  assert.equal(c.step.id, "blink");
+  assert.equal(c.step, undefined);
   assert.equal(c.baseline.neutralEARLeft, 0.3);
 });
 test("stationary face cannot complete gesture enrollment", () => {
@@ -67,6 +67,7 @@ test("stationary face cannot complete gesture enrollment", () => {
   });
   for (let t = 0; t < 16000; t += 40) c.update(frame(t));
   assert.equal(c.index, 1);
+  assert.equal(c.step, undefined);
   assert.equal(c.enabled.length, 0);
 });
 test("unavailable capabilities are not required and skip does not enable them", () => {

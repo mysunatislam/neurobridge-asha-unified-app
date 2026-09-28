@@ -2,6 +2,7 @@ import { Perception } from "./perception.js";
 import { GuidedCalibration } from "./calibration.js";
 import { faceStudio, paintFaceStudio } from "./face-studio.js";
 import { RequestGate, recommendations, clamp } from "./signals.js";
+import { CompanionGuide, responsePlan, confirmationMatches } from "./companion-guide.js";
 import {
   supportOptions,
   supportGoals,
@@ -41,6 +42,13 @@ const names = {
   vitalsense: "VitalSense",
   senseassist: "SenseAssist",
   posture: "Body posture",
+};
+const moduleGuidance = {
+  facespeak: "FaceSpeak shows your live eyes, eyebrows, smile, lips and head movement. Blinks are observations only. A caregiver can calibrate a comfortable head or smile response here.",
+  fingerspeak: "FingerSpeak can preview one or two hands. To speak personalized phrases, record and test your own gestures in the FingerSpeak studio.",
+  vitalsense: "VitalSense shows an experimental camera pulse trend. It is not a medical vital reading and never sends an emergency request.",
+  senseassist: "SenseAssist can help clarify speech that was hard to understand. Review what was heard before Asha suggests a possible meaning.",
+  posture: "Body posture shows camera-based position and movement. A sustained change can lead to a gentle question, not an automatic diagnosis or caregiver request.",
 };
 const needs = {
   water: "I need water",
@@ -154,13 +162,12 @@ let settings = read("settings", {
   pendingHandTraining = null;
 const conversation = [];
 const gate = new RequestGate(),
+  guide = new CompanionGuide(),
   perception = new Perception($("camera"), $("overlay"));
 let wakeTimer,
   scanIndex = -1,
   scanKind = null,
-  blinkTimes = [],
   lastProactive = -Infinity;
-const turns = { LEFT_TURN_COMPLETED: [], RIGHT_TURN_COMPLETED: [] };
 const captureDock = document.createElement("div");
 captureDock.className = "capture-dock";
 captureDock.setAttribute("aria-hidden", "true");
@@ -213,6 +220,16 @@ function show(id) {
   if (id === "patient") {
     pollPatient();
     heartbeat();
+  }
+  if (previousView !== id) guide.clear();
+  if (profile && settings.proactive && previousView !== id && ["patient", "details", "settings"].includes(id)) {
+    const description = id === "patient"
+      ? "This is your patient page. I will explain your choices aloud after support starts. You can repeat my last message at any time."
+      : id === "details"
+        ? "These are your live details. " + (moduleGuidance[module] || "You can explore every module here. The camera stays shared across them.")
+        : "This is Settings. A caregiver can choose my voice or pause my check-ins here.";
+    say(description);
+    guide.lastPrompt = performance.now();
   }
   $("main").focus({ preventScroll: true });
 }
@@ -357,9 +374,8 @@ function loadPersonal() {
     $("calibrationDialog").close();
     gate.cancel();
     $("confirmDialog").close();
-    blinkTimes = [];
-    turns.LEFT_TURN_COMPLETED = [];
-    turns.RIGHT_TURN_COMPLETED = [];
+    guide.clear();
+    guide.lastPrompt = -Infinity;
     personalProfileId = patient?.patientId;
   }
   trained = read("calibration_" + patient?.patientId, null);
@@ -518,6 +534,8 @@ $("assessmentForm").onsubmit = async (e) => {
       body: data,
     });
     settings.cloud = true;
+    settings.voice = data.voice.name;
+    settings.rate = data.voice.rate;
     save("settings", settings);
     if (editing) {
       toast(
@@ -586,9 +604,11 @@ if ("speechSynthesis" in window) {
 }
 function say(text, { recording, force = false } = {}) {
   $("ashaMessage").textContent = text;
+  $("detailAshaMessage").textContent = "Asha: " + text;
   if (!force && profile?.assessment?.canHear === false) return;
   const saved = recording && read("voice_" + recording, null);
   if (saved) {
+    if ("speechSynthesis" in window) speechSynthesis.cancel();
     new Audio(saved).play().catch(() => {});
     return;
   }
@@ -601,14 +621,18 @@ function say(text, { recording, force = false } = {}) {
   u.pitch = profile?.voice?.pitch || 1;
   speechSynthesis.speak(u);
 }
+function voiceBusy() {
+  return "speechSynthesis" in window && speechSynthesis.speaking;
+}
 $("previewVoice").onclick = () => {
   const old = settings.voice;
   settings.voice = $("setupVoice").value;
-  say("I’m Asha. I’m here with you. We can take this at your pace.", {
+  say("I’m Asha. I’ll guide the patient aloud, describe each page, and give time to respond. Blinking will never send a request.", {
     force: true,
   });
   settings.voice = old;
 };
+$("setupVoice").onchange = () => $("previewVoice").click();
 $("repeatMessage").onclick = () => say($("ashaMessage").textContent);
 function renderPatient() {
   if (!profile) return;
@@ -621,15 +645,53 @@ function renderPatient() {
   $("modeBadge").textContent = names[module];
   $("gestureHint").textContent = confirmationHint();
   $("connectionBadge").textContent = "Care circle connected";
+  updateQuietAsha();
 }
+function updateQuietAsha() {
+  $("quietAsha").textContent = settings.proactive ? "Pause Asha check-ins" : "Resume Asha check-ins";
+  $("quietAsha").setAttribute("aria-pressed", String(!settings.proactive));
+}
+$("quietAsha").onclick = () => {
+  settings.proactive = !settings.proactive;
+  save("settings", settings);
+  guide.clear();
+  updateQuietAsha();
+  if (settings.proactive) {
+    if (perception.running) guideCheckIn("routine");
+    else say("I'm ready to guide you again. Start support when you are comfortable.");
+  } else {
+    if ("speechSynthesis" in window) speechSynthesis.cancel();
+    $("ashaMessage").textContent = "Asha's check-ins are paused. Requests and caregiver messages still work.";
+    $("detailAshaMessage").textContent = "Asha: " + $("ashaMessage").textContent;
+  }
+};
 function confirmationHint() {
-  if (trained?.enabled?.includes("SMILE_COMPLETED"))
-    return "When Asha asks a question, smile and relax to say yes.";
-  if (trained?.enabled?.includes("NOD_COMPLETED"))
-    return "When Asha asks a question, nod and return to rest to say yes.";
-  if (trained?.enabled?.includes("BLINK_COMPLETED"))
-    return "When Asha asks a question, make one deliberate blink to say yes.";
-  return "Calibrate a comfortable gesture in Details for hands-free responses. Touch always works.";
+  const plan = responsePlan(profile?.assessment, trained?.enabled);
+  if (plan.mode === "menu") return "Nod and return to center once more to confirm. A blink will not send anything.";
+  if (plan.mode === "yes") return "Please " + plan.verb + " once more to confirm. A blink will not send anything.";
+  if (Object.values(handMaps).some((x) => x?.trained))
+    return "Repeat your personalized hand gesture to confirm. A blink will not send anything.";
+  return "A caregiver can calibrate a comfortable response in Details. Touch confirmation is also available. Blinks do not send requests.";
+}
+function guideCheckIn(reason = "routine") {
+  guide.due(performance.now());
+  if (!profile || !settings.proactive || !perception.running || document.hidden ||
+      calibration || gate.pending || (guide.pending && reason !== "start") ||
+      !["patient", "details"].includes(view)) return;
+  if (settings.scan) {
+    if (reason === "start") {
+      guide.lastPrompt = performance.now();
+      say("I'm Asha. Hands-free need scanning is on. I'll read each choice aloud. Use your calibrated gesture to choose one, then confirm it separately. Blinks never send requests.");
+    }
+    return;
+  }
+  const message = guide.ask({
+    assessment: profile.assessment,
+    enabled: trained?.enabled || [],
+    handMapped: Object.values(handMaps).some((x) => x?.trained),
+    reason,
+  }, performance.now());
+  say(message);
 }
 let screenLock;
 function monitorUI(on) {
@@ -641,6 +703,7 @@ function monitorUI(on) {
     ? "Monitoring together: NeuroFace Sense · FingerSpeak · VitalSense · Posture. See Details for signal status."
     : "NeuroFace Sense · FingerSpeak · VitalSense · Posture — paused. Start support to resume.";
   if (!on) {
+    guide.clear();
     $("fingerStudio")?.contentWindow?.ashaSharedPause?.();
     screenLock?.release().catch(() => {});
     screenLock = null;
@@ -660,6 +723,9 @@ async function startMonitor() {
     toast("Open your patient link first.");
     return;
   }
+  // Speak inside the caregiver's Start tap, before permission/model awaits.
+  // Mobile browsers may block audio first started after an async operation.
+  if (settings.proactive) say("I'm Asha. I'm starting your support. I will guide you when the camera is ready.");
   $("startMonitoring").disabled = $("studioStart").disabled = true;
   try {
     await perception.start();
@@ -667,13 +733,7 @@ async function startMonitor() {
     try {
       screenLock = await navigator.wakeLock?.request("screen");
     } catch {}
-    say(
-      "I’m here with you. " +
-        (trained
-          ? confirmationHint()
-          : "Let’s calibrate a comfortable gesture in Details."),
-      { recording: trained ? "welcome" : null },
-    );
+    if (settings.proactive) guideCheckIn("start");
     if (!trained)
       toast("Open Details → Calibrate patient to train your own movements.");
     heartbeat();
@@ -706,6 +766,7 @@ function propose(kind, source = "touch", text = needs[kind]) {
   }
   const p = gate.propose(kind, text, source, performance.now());
   if (!p) return;
+  guide.clear();
   $("confirmText").textContent = text;
   $("confirmHint").textContent =
     "Send this request to your caregiver? " + confirmationHint();
@@ -787,14 +848,7 @@ function renderRetry() {
 }
 $("testRequest").onclick = () => sendEvent("test", "touch", needs.test, true);
 function confirmationEvent(e) {
-  const enabled = trained?.enabled || [];
-  return enabled.includes("SMILE_COMPLETED")
-    ? e.type === "SMILE_COMPLETED"
-    : enabled.includes("NOD_COMPLETED")
-      ? e.type === "NOD_COMPLETED"
-      : enabled.includes("BLINK_COMPLETED")
-        ? e.type === "BLINK_COMPLETED" && e.deliberate
-        : false;
+  return confirmationMatches(e.type, profile?.assessment, trained?.enabled);
 }
 perception.addEventListener("gesture", ({ detail: e }) => {
   if (calibration || !trained || !["patient", "details"].includes(view)) return;
@@ -802,37 +856,24 @@ perception.addEventListener("gesture", ({ detail: e }) => {
     if (confirmationEvent(e)) confirmRequest();
     return;
   }
+  const guidedKind = guide.accept(e.type, performance.now());
+  if (guidedKind) {
+    propose(guidedKind, "guided face");
+    return;
+  }
   if (scanKind && settings.scan && confirmationEvent(e)) {
     propose(scanKind, "face");
     return;
   }
-  if (
-    e.type === "BLINK_COMPLETED" &&
-    e.deliberate &&
-    e.facing &&
-    trained.enabled.includes(e.type)
-  ) {
-    blinkTimes = blinkTimes.filter((t) => e.timestamp - t < 5000);
-    blinkTimes.push(e.timestamp);
-    if (blinkTimes.length >= 3) {
-      blinkTimes = [];
-      propose("water", "face");
-    }
+  // Observed movements outside a spoken question are not caregiver requests.
+  // In particular, three ordinary blinks can never propose or confirm one.
+  const now = performance.now();
+  guide.due(now);
+  if (e.type === "SMILE_COMPLETED" && settings.proactive && !guide.pending &&
+      now - lastProactive > 120000 && !voiceBusy()) {
+    lastProactive = now;
+    guideCheckIn("smile");
   }
-  if (turns[e.type] && trained.enabled.includes(e.type)) {
-    turns[e.type] = turns[e.type].filter((t) => e.timestamp - t < 8000);
-    turns[e.type].push(e.timestamp);
-    if (turns[e.type].length >= 3) {
-      turns[e.type] = [];
-      propose(e.type === "LEFT_TURN_COMPLETED" ? "food" : "toilet", "face");
-    }
-  }
-  if (
-    e.type === "PUCKER_COMPLETED" &&
-    trained.enabled.includes(e.type) &&
-    e.duration >= 1500
-  )
-    propose("comfort", "face");
 });
 perception.addEventListener("facecommand", ({ detail: c }) => {
   if (
@@ -875,6 +916,10 @@ perception.addEventListener("hand", ({ detail: h }) => {
     return;
   }
   if (!["patient", "details"].includes(view) || fingerNeuralLive) return;
+  if (h.pose === "Open palm" && settings.proactive && !guide.pending &&
+      !gate.pending && guide.due(performance.now()) && !voiceBusy()) {
+    guideCheckIn("routine");
+  }
   if (gate.pending && handMaps[h.pose]?.trained) {
     confirmRequest();
     return;
@@ -890,28 +935,19 @@ perception.addEventListener("handframe", ({ detail: d }) => {
   );
 });
 perception.addEventListener("cue", async ({ detail: cue }) => {
+  guide.due(performance.now());
   if (
     !settings.proactive ||
     calibration ||
     gate.pending ||
+    guide.pending ||
+    !["patient", "details"].includes(view) ||
+    voiceBusy() ||
     performance.now() - lastProactive < 120000
   )
     return;
   lastProactive = performance.now();
-  if (cue === "possible_wake") {
-    say(
-      "I see some movement and your eyes are open again. Do you need water? " +
-        confirmationHint(),
-      { recording: "water" },
-    );
-    propose("water", "face");
-    return;
-  }
-  say(
-    "I noticed a lasting change in your position or facial movement. Would you like me to ask your caregiver to check in? " +
-      confirmationHint(),
-  );
-  propose("comfort", "monitor");
+  guideCheckIn(cue === "possible_wake" ? "wake" : "change");
 });
 perception.addEventListener("frame", ({ detail: s }) => {
   if (calibration) {
@@ -931,6 +967,8 @@ perception.addEventListener("frame", ({ detail: s }) => {
       $("calibrationDialog").close();
       $("gestureHint").textContent = confirmationHint();
       say("Calibration saved. " + confirmationHint());
+      guide.clear();
+      guide.lastPrompt = -Infinity;
       toast("Calibration saved from your actual movement samples.");
     } else if (calibration.index !== old) calibrationStep();
   }
@@ -957,6 +995,7 @@ $("calibrateButton").onclick = async () => {
   show("details");
   perception.resetFaceReference();
   gate.cancel();
+  guide.clear();
   calibration = new GuidedCalibration(profile.assessment);
   $("calibrationDialog").showModal();
   calibrationStep();
@@ -1168,6 +1207,13 @@ setInterval(() => {
 setInterval(() => {
   if (patient && ["patient", "details"].includes(view)) heartbeat();
 }, 15000);
+setInterval(() => {
+  if (settings.proactive && !settings.scan && perception.running &&
+      !document.hidden && !voiceBusy() &&
+      ["patient", "details"].includes(view) &&
+      !calibration && !gate.pending && guide.due(performance.now()))
+    guideCheckIn("routine");
+}, 10000);
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     perception.rest.reset();
@@ -1305,6 +1351,7 @@ function renderSettings() {
   $("autoScan").checked = settings.scan;
   $("voiceSelect").value = settings.voice;
   $("voiceRate").value = settings.rate;
+  updateQuietAsha();
 }
 for (const [id, k] of [
   ["cloudConsent", "cloud"],
@@ -1312,12 +1359,23 @@ for (const [id, k] of [
   ["autoScan", "scan"],
 ])
   $(id).onchange = () => {
+    if (k === "scan" && $(id).checked && responsePlan(profile?.assessment, trained?.enabled).mode === "none") {
+      $(id).checked = false;
+      toast("Calibrate a head or smile response before enabling hands-free scanning. Blinks cannot select a need.");
+      return;
+    }
     settings[k] = $(id).checked;
     save("settings", settings);
+    if (k === "proactive") {
+      guide.clear();
+      updateQuietAsha();
+      if (!settings.proactive && "speechSynthesis" in window) speechSynthesis.cancel();
+    }
   };
 $("voiceSelect").onchange = () => {
   settings.voice = $("voiceSelect").value;
   save("settings", settings);
+  say("I'm Asha. I'll explain each page and check in gently while support is on. You can pause my check-ins any time.", { force: true });
 };
 $("voiceRate").oninput = () => {
   settings.rate = Number($("voiceRate").value);
@@ -1390,13 +1448,14 @@ setInterval(() => {
     .forEach((b) => b.classList.remove("scan-active"));
   scanKind = null;
   if (
+    !settings.proactive ||
     !settings.scan ||
     !trained ||
     !perception.running ||
     view !== "patient" ||
     gate.pending ||
     calibration ||
-    speechSynthesis.speaking
+    voiceBusy()
   )
     return;
   const memory = read("preferences_" + patient.patientId, {}),
@@ -1577,6 +1636,9 @@ document.querySelectorAll("[data-module]").forEach(
       save("settings", settings);
       $("modeBadge").textContent = names[module];
       renderModule();
+      guide.clear();
+      guide.lastPrompt = performance.now();
+      if (settings.proactive) say(moduleGuidance[module]);
       heartbeat();
     }),
 );
@@ -1591,9 +1653,7 @@ function paint(s) {
   $("liveSummary").dataset.cycles = JSON.stringify(s.cycles || {});
   if (view !== "details") return;
   paintFaceStudio(s, trained, {
-    blink: blinkTimes.filter((t) => s.t - t < 5000).length,
-    left: turns.LEFT_TURN_COMPLETED.filter((t) => s.t - t < 8000).length,
-    right: turns.RIGHT_TURN_COMPLETED.filter((t) => s.t - t < 8000).length,
+    question: guide.pending ? "Awaiting an answer" : "No question open",
   });
   const text = (id, v) => {
     if ($(id)) $(id).textContent = v;

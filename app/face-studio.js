@@ -32,7 +32,7 @@ export function faceStudio() {
       <section class="card"><h3>👄 Lip Control <small>Module 5</small></h3>${row(["Gesture", "lipGesture"], ["MAR", "mar"], ["Pucker", "pucker"])}${chart("lipChart", "LIP OPENING")}${cell("Lip deviation", "deviation")}${cell("Sustained one-sided hold", "lipHold")}<progress id="nf-lipProgress" max="60" value="0" aria-label="Sustained one-sided lip hold, seconds"></progress><p id="nf-lipFlag" class="small muted">60 seconds of persistent same-side displacement is required.</p>${row(["Brow / corner pattern", "affectBrow"], ["Squeeze / tension pattern", "affectTension"])}<p class="small muted">Expression patterns are not proof of sadness or pain. A lip flag is not a seizure diagnosis.</p></section>
       <section class="card"><h3>〰 Facial Motion <small>Module 6</small></h3>${row(["Displacement", "displacement"], ["Acceleration", "acceleration"], ["Rhythm", "rhythm"])}${chart("motionChart", "LANDMARK DISPLACEMENT")}${cell("Movement state", "motionState")}<p class="small muted">Large or repeated motion can also be intentional. This does not distinguish involuntary movement from voluntary movement.</p></section>
       <section class="card"><h3>↔ Head Movement <small>Module 7</small></h3>${row(["Yaw", "yaw"], ["Pitch", "pitch"], ["Roll", "roll"])}${cell("Observed pose", "headPose")}${cell("Nod detected", "nod")}${chart("yawChart", "LEFT / RIGHT HEAD TURN")}${chart("pitchChart", "UP / DOWN HEAD MOVEMENT")}<p id="nf-headState" class="small muted">Complete a turn and return to center to count it.</p></section>
-      <section class="card"><h3>🗣 FaceSpeak Communication</h3><div id="nf-rules"></div><p id="faceCalibrationStatus" class="small muted"></p><p class="small muted">Commands use the existing calibrated temporal rules. Requests still need a separate confirmation. Held-shut eyes never call emergency services.</p><button id="nf-calibrateRules" class="secondary">Guided gesture calibration →</button></section>
+      <section class="card"><h3>🗣 FaceSpeak Communication</h3><div id="nf-rules"></div><p id="faceCalibrationStatus" class="small muted"></p><p class="small muted">Asha asks first. A calibrated head or smile response proposes a request, then a separate response confirms it. Blinks are observations only and never contact a caregiver.</p><button id="nf-calibrateRules" class="secondary">Guided gesture calibration →</button></section>
       <section class="card face-log"><div class="section-heading"><h3>📋 Activity Log</h3><div class="actions"><button id="nf-clearLog" class="text-button">Clear</button><button id="nf-exportLog" class="text-button">Export JSON</button></div></div><div id="nf-log" class="face-event-log"><p class="muted">No observations yet.</p></div></section>
     </div>
   </div>`;
@@ -180,19 +180,14 @@ export function paintFaceStudio(s, trained, progress) {
         : "Waiting for valid facial tracking.",
   );
   const rules = [
-    ["3 deliberate blinks", "Water", progress.blink, "BLINK_COMPLETED"],
-    ["3 left turns + return", "Food", progress.left, "LEFT_TURN_COMPLETED"],
-    [
-      "3 right turns + return",
-      "Toilet",
-      progress.right,
-      "RIGHT_TURN_COMPLETED",
-    ],
-    ["Nod + smile", "I am okay, thank you", null, "NOD_COMPLETED"],
+    ["Prompted nod", "Water or yes", "NOD_COMPLETED"],
+    ["Prompted left turn + return", "Food", "LEFT_TURN_COMPLETED"],
+    ["Prompted right turn + return", "Toilet", "RIGHT_TURN_COMPLETED"],
+    ["Blinks", "Observed only · no request", null],
   ]
     .map(
-      ([label, phrase, count, event]) =>
-        `<div class="rule"><span>${label}<small>${trained?.enabled?.includes(event) ? "Calibrated" : "Calibration needed"}</small></span><strong>${count === null ? "" : count + "/3 · "}${phrase}</strong></div>`,
+      ([label, phrase, event]) =>
+        `<div class="rule"><span>${label}<small>${event ? trained?.enabled?.includes(event) ? "Calibrated" : "Calibration needed" : "Always safe"}</small></span><strong>${phrase}</strong></div>`,
     )
     .join("");
   if ($("nf-rules").dataset.content !== rules) {

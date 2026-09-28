@@ -108,6 +108,15 @@ try {
     null,
     { timeout: 60000 },
   );
+  assert.match(await page.locator("#ashaMessage").textContent(), /I'm Asha.*Nod for water|I'm Asha.*reliable hands-free answer/s);
+  assert.equal(await page.locator("#ashaBubble").isVisible(), true);
+  await page.locator("#quietAsha").click();
+  assert.equal(await page.locator("#quietAsha").textContent(), "Resume Asha check-ins");
+  await page.locator("#quietAsha").click();
+  await page.screenshot({ path: "artifacts/patient-guidance-mobile.png", fullPage: true });
+  await page.locator("#bubbleHandle").click();
+  assert.equal(await page.locator("#chatPanel").isVisible(), true);
+  await page.locator("#closeChat").click();
   await page.locator("#detailsButton").click();
   const checked = [];
   for (const module of [

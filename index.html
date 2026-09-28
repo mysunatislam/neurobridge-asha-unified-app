@@ -260,6 +260,8 @@
                 Start support ▷</button
               ><button id="pauseMonitoring" class="secondary" hidden>
                 Pause camera</button
+              ><button id="quietAsha" class="secondary" type="button">
+                Pause Asha check-ins</button
               ><button
                 id="repeatMessage"
                 class="icon-button"
@@ -318,6 +320,7 @@
           <div>
             <span class="eyebrow">ONLY THE DETAILS YOU NEED</span>
             <h1>Your sensing studio.</h1>
+            <p id="detailAshaMessage" class="small muted">Asha will explain this page aloud when support starts.</p>
           </div>
           <button data-view="patient" class="secondary">
             ← Patient screen
@@ -424,11 +427,12 @@
             become a request.
           </p>
           <label class="check"
-            ><input id="proactive" type="checkbox" checked /> Gentle proactive
-            check-ins after sustained movement changes</label
+            ><input id="proactive" type="checkbox" checked /> Asha's spoken
+            guidance and proactive check-ins</label
           ><label class="check"
             ><input id="autoScan" type="checkbox" /> Hands-free need scanning
             (uses your calibrated confirmation gesture)</label
+          ><p class="small muted">While support is active, Asha introduces each page, offers a check-in about every two minutes, and responds to sustained changes. She waits for a calibrated answer and a separate confirmation before sending a caregiver request. Pause check-ins any time.</p
           ><label class="field"
             >Spoken voice<select id="voiceSelect"></select></label
           ><label class="field"
