@@ -78,13 +78,25 @@ function ensureFingerStudio() {
   frame.id = "fingerStudio";
   frame.className = "finger-frame";
   frame.title = "FingerSpeak full calibration, speak and evaluation studio";
+  frame.style.visibility = "hidden";
+  $("fingerStudioHost").setAttribute("aria-busy", "true");
+  const loading = document.createElement("p");
+  loading.id = "fingerLoading";
+  loading.className = "card muted";
+  loading.setAttribute("role", "status");
+  loading.textContent = "Loading the full FingerSpeak studio…";
   frame.allow = "camera 'none'; microphone 'none'";
   frame.src = new URL(
     "neuroface/fingerspeak.html?embedded=1&profile=" +
       encodeURIComponent(patient?.patientId || "local"),
     site,
   ).href;
-  $("fingerStudioHost").append(frame);
+  $("fingerStudioHost").append(loading, frame);
+  setTimeout(() => {
+    if (loading.isConnected)
+      loading.textContent =
+        "FingerSpeak is still loading. Check your connection and reload if this continues.";
+  }, 30000);
 }
 window.addEventListener("message", (e) => {
   if (
@@ -93,7 +105,13 @@ window.addEventListener("message", (e) => {
   )
     return;
   const d = e.data || {};
-  if (d.type === "asha-hand-ready") e.source.ashaSetTheme?.(settings.theme);
+  if (d.type === "asha-hand-ready") {
+    e.source.ashaSetTheme?.(settings.theme);
+    $("fingerStudio").dataset.ready = "true";
+    $("fingerStudio").style.visibility = "visible";
+    $("fingerLoading")?.remove();
+    $("fingerStudioHost").setAttribute("aria-busy", "false");
+  }
   if (d.type === "asha-hand-open-face") {
     module = "facespeak";
     $("modeBadge").textContent = names[module];
@@ -329,6 +347,7 @@ function loadPersonal() {
       monitorUI(false);
     }
     $("fingerStudio")?.remove();
+    $("fingerLoading")?.remove();
     fingerNeuralLive = false;
     perception.neuralHandActive = false;
     perception.setActiveModule(module);

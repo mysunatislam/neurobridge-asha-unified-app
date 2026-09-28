@@ -111,6 +111,7 @@ try {
       await frame
         .getByRole("heading", { name: "Gesture vocabulary", exact: true })
         .waitFor();
+      await frame.locator("#gestureList .gesture-row").first().waitFor();
       await frame.locator('[data-tab="evaluate"]').click();
       assert.ok(
         await frame

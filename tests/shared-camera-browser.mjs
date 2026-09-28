@@ -3,6 +3,7 @@
 import { createRequire } from "node:module";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 const require = createRequire(import.meta.url);
 const {
   chromium,
@@ -13,6 +14,7 @@ const browser = await chromium.launch({
 });
 const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
 const errors = [];
+const base = process.env.ASHA_TEST_BASE || "http://127.0.0.1:4180/";
 page.on("pageerror", (e) => errors.push(e.message));
 const profile = {
   patientId: "camera-test",
@@ -37,6 +39,15 @@ const profile = {
   voice: { name: "", rate: 0.9 },
 };
 try {
+  for (const fixture of ["portrait-test.jpg", "hands-test.jpg"])
+    await page.route(`**/artifacts/${fixture}`, (route) =>
+      route.fulfill({
+        contentType: "image/jpeg",
+        path: fileURLToPath(
+          new URL(`../artifacts/${fixture}`, import.meta.url),
+        ),
+      }),
+    );
   await page.route("**/api/session**", (route) =>
     route.fulfill({
       json: { profile, role: "patient", events: [], status: null },
@@ -69,8 +80,15 @@ try {
             // distance gate. Present the unchanged fixture at normal arm length.
             ctx.fillStyle = "#fff";
             ctx.fillRect(0, 0, 640, 480);
-            const height = 520 * window.fixtureImage.height / window.fixtureImage.width;
-            ctx.drawImage(window.fixtureImage, 60, (480 - height) / 2, 520, height);
+            const height =
+              (520 * window.fixtureImage.height) / window.fixtureImage.width;
+            ctx.drawImage(
+              window.fixtureImage,
+              60,
+              (480 - height) / 2,
+              520,
+              height,
+            );
           } else ctx.drawImage(window.fixtureImage, 0, 0, 640, 480);
         };
         draw();
@@ -80,7 +98,7 @@ try {
       },
     });
   });
-  await page.goto("http://127.0.0.1:4180/");
+  await page.goto(base);
   await page.locator("#patient:not([hidden])").waitFor();
   await page.locator("#startMonitoring").click();
   await page.waitForFunction(
@@ -226,6 +244,7 @@ try {
   );
   assert.equal(errors.length, 0);
   const report = {
+    base,
     oneCameraAcrossModules: true,
     bothHandsDetected: true,
     realCalibrationSampleAccepted: true,
