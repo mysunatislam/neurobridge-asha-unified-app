@@ -54,6 +54,8 @@ const raw = (extra = {}) => ({
   roll: 0,
   mar: 0.06,
   earMean: 0.3,
+  earLeft: 0.3,
+  earRight: 0.3,
   ...extra,
 });
 const result = (extra = {}) => ({
@@ -89,7 +91,7 @@ test("original AU geometry responds to eyebrow rise and lowering; rest is zero",
   assert.ok(s.au.values.AU4 > 90);
   assert.ok(s.au.values.AU1 < 5);
 });
-test("head movement is not continuously zeroed; original nod and blink events are visible", () => {
+test("head movement and nod stay visible; observed blink counts are not duplicated from commands", () => {
   const a = calibrated();
   const s = a.update(
     mesh(),
@@ -107,8 +109,27 @@ test("head movement is not continuously zeroed; original nod and blink events ar
   assert.equal(s.head.pitch, 15);
   assert.equal(s.head.label, "Head right");
   assert.equal(s.head.nodRecent, true);
-  assert.equal(s.eye.count, 1);
-  assert.equal(s.eye.last.duration, 320);
+  assert.equal(
+    s.eye.count,
+    0,
+    "A command event without a measured dip must not increment observations",
+  );
+  for (let t = 2040; t <= 2440; t += 40)
+    a.update(mesh(), raw(), result(), baseline, t);
+  for (let t = 2480; t <= 2600; t += 40)
+    a.update(
+      mesh(),
+      raw({ earLeft: 0.21, earRight: 0.21 }),
+      result(),
+      baseline,
+      t,
+    );
+  let reopened;
+  for (let t = 2640; t <= 2800; t += 40)
+    reopened = a.update(mesh(), raw(), result(), baseline, t);
+  assert.equal(reopened.eye.count, 1);
+  assert.equal(reopened.eye.total, 1);
+  assert.equal(reopened.eye.last.duration, 160);
 });
 test("corner held for 59 seconds does not flag; 60 seconds flags once", () => {
   const a = calibrated(),

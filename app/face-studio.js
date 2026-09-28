@@ -69,7 +69,7 @@ export function paintFaceStudio(s, trained, progress) {
   text(
     "eyeDebug",
     a.valid
-      ? `${s.blinks} blinks total · ${s.face?.accepted ? "temporal detector active" : s.face?.reason || "observing"} · EAR ref close ${num(a.eye?.close)} / open ${num(a.eye?.open)}; fast dips also checked`
+      ? `${a.eye?.total || 0} observed blinks total · live EAR reference ${num(a.eye?.reference?.left)} / ${num(a.eye?.reference?.right)} · counts after both eyes reopen. ${a.eye?.reason || "Deliberate FaceSpeak commands are checked separately."}`
       : "Waiting for reliable tracking",
   );
   text(

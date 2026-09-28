@@ -23,7 +23,6 @@ export class Perception extends EventTarget {
     this.snapshot = {};
     this.enabled = [];
     this.handStates = {};
-    this.blinks = 0;
     this.yoloEnabled = false;
   }
   emit(type, detail) {
@@ -282,7 +281,6 @@ export class Perception extends EventTarget {
     }
     if (d.hand) this.consumeHands(d.hand, d.t);
     for (const e of r.events) {
-      if (e.type === "BLINK_COMPLETED") this.blinks++;
       this.emit("gesture", {
         ...e,
         smiling: !!r.smile?.smileDetected,
@@ -318,7 +316,7 @@ export class Perception extends EventTarget {
       hands: this.hands || [],
       pulse: this.pulse,
       latency: Math.round(d.ms),
-      blinks: this.blinks,
+      blinks: analysis.eye.total,
       activity: this.rest.resting ? "Rest-like pattern" : "Observing",
       t: d.t,
       yolo: this.yoloResult,

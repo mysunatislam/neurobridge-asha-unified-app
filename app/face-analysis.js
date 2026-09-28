@@ -1,5 +1,6 @@
 // Detailed observation pipeline restored from NeuroFace Sense. This does not
 // replace the calibrated Engine's blink/smile/head command state machines.
+import { BlinkCounter } from "./blink-counter.js";
 const median = (a) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)];
 const clamp = (n) => Math.max(0, Math.min(1, n));
 export class FaceAnalysis {
@@ -12,8 +13,7 @@ export class FaceAnalysis {
     this.neutralFrames = [];
     this.neutral = null;
     this.previous = null;
-    this.blinkTimes = [];
-    this.lastBlink = null;
+    this.blinkCounter = new BlinkCounter();
     this.lastNod = null;
     this.motionFrames = [];
     this.log = [];
@@ -30,6 +30,10 @@ export class FaceAnalysis {
       f.facePresent &&
       f.faceQuality >= 0.65
     );
+    const previousBlinkTotal = this.blinkCounter.total;
+    const eye = this.blinkCounter.update({ ...f, facePresent: valid }, t);
+    if (eye.total > previousBlinkTotal)
+      this.addLog(t, "blink observed · bilateral EAR drop and reopening");
     if (this.lastT !== null && t - this.lastT > 500) {
       this.lipWatch.reset();
       this.previous = null;
@@ -50,6 +54,7 @@ export class FaceAnalysis {
         log: this.log,
         lip: { duration: 0, latched: false },
         au: { ready: !!this.activity.baseline, invalid: true, values: {} },
+        eye,
       };
     }
     const geomHead = M.headPose(lm);
@@ -135,14 +140,9 @@ export class FaceAnalysis {
                   ? "Head tilt"
                   : "Centered";
     for (const e of r.events || []) {
-      if (e.type === "BLINK_COMPLETED") {
-        this.blinkTimes.push(t);
-        this.lastBlink = e;
-      }
       if (e.type === "NOD_COMPLETED") this.lastNod = t;
       if (
         [
-          "BLINK_COMPLETED",
           "NOD_COMPLETED",
           "LEFT_TURN_COMPLETED",
           "RIGHT_TURN_COMPLETED",
@@ -156,7 +156,6 @@ export class FaceAnalysis {
             (e.deliberate ? " · deliberate" : ""),
         );
     }
-    this.blinkTimes = this.blinkTimes.filter((x) => t - x < 60000);
     const gaze = f.gaze?.available
       ? { ...f.gaze, label: M.gazeLabel(f.gaze) }
       : { available: false, label: "Unavailable (no iris)" };
@@ -284,17 +283,7 @@ export class FaceAnalysis {
       smile,
       motion,
       affect,
-      eye: {
-        state: r.states?.blink || "Observing",
-        count: this.blinkTimes.length,
-        last: this.lastBlink,
-        close:
-          ((baseline.neutralEARLeft + baseline.neutralEARRight) / 2) *
-          baseline.blinkClosedRatio,
-        open:
-          ((baseline.neutralEARLeft + baseline.neutralEARRight) / 2) *
-          baseline.blinkOpenRatio,
-      },
+      eye,
       lip: {
         gesture,
         pucker: r.pucker || 0,
