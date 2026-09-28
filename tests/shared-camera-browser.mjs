@@ -187,6 +187,9 @@ try {
         null,
         { timeout: 25000 },
       );
+      await frame.locator("#currentGesture").filter({ hasText: /tracked.*preview only/i }).waitFor();
+      assert.match(await frame.locator("#gestureSignalNote").textContent(), /Hand detected.*Train personal gestures/i);
+      assert.doesNotMatch(await frame.locator("#currentGesture").textContent(), /no hand detected/i);
       assert.equal(
         await frame
           .locator("body")

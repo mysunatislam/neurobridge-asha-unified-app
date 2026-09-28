@@ -72,6 +72,7 @@
   .auto-fingers{font:11px var(--mono);color:var(--text-dim);line-height:1.5;}
   .intent-badge{ font-family:var(--mono); font-size:10px; padding:3px 9px; border-radius:12px; border:1px solid var(--line); }
   .intent-badge.REST{color:var(--text-dim);}
+  .intent-badge.UNTRAINED{color:var(--amber);border-color:var(--amber);}
   .intent-badge.CANDIDATE{color:var(--amber); border-color:var(--amber);}
   .intent-badge.WAIT_RELEASE{color:var(--violet); border-color:var(--violet);}
 
@@ -243,12 +244,13 @@
       </div>
       <canvas id="vitalsCanvas"></canvas>
       <div class="gesture-readout">
-        <div>predicted class</div>
+        <div id="gestureReadoutLabel">tracking</div>
         <div style="display:flex; align-items:center; gap:8px;">
           <div class="current" id="currentGesture">—</div>
           <span class="intent-badge REST" id="intentBadge">REST</span>
         </div>
       </div>
+      <div class="test-voice-note" id="gestureSignalNote" role="status" aria-live="polite">Show a hand to preview its pose. Gesture confidence and spoken phrases require personal calibration.</div>
     </div>
 
     <div class="vitals prob-panel">
@@ -573,6 +575,15 @@ function processHandResult(result, now){
     if (now - lastAutoDrawAt > 100 || hands.length === 0){ renderAutoHands(autoHands); lastAutoDrawAt = now; }
 
     if (hands.length){
+      const readout = document.getElementById('currentGesture');
+      const note = document.getElementById('gestureSignalNote');
+      const label = document.getElementById('gestureReadoutLabel');
+      // A restored hand is tracked immediately, even before the next model interval.
+      if (model && label.textContent === 'tracking') {
+        label.textContent = 'model status';
+        readout.textContent = 'Hand tracked · checking gesture';
+        note.textContent = 'Hand detected. Gathering a steady gesture sequence for the personal model…';
+      }
       hands.forEach((hand, i) => drawLandmarks(hand.lm, i, hand.label));
       const stamped = { t: now, feat: window.NF_fingerspeakSignal.packHands(hands) };
 
@@ -582,16 +593,37 @@ function processHandResult(result, now){
       const cutoff = performance.now() - LIVE_BUFFER_MAX_MS;
       while (liveBuffer.length && liveBuffer[0].t < cutoff) liveBuffer.shift();
 
-      if (model && performance.now() - lastInferenceAt > INFERENCE_INTERVAL_MS){
+      if (!model){
+        const stablePose = autoHands.length === 1 && autoHands[0].pose !== 'Observing…' ? autoHands[0].pose : null;
+        label.textContent = 'hand pose · preview only';
+        readout.textContent = stablePose ? stablePose + ' · preview only' : hands.length + (hands.length === 1 ? ' hand' : ' hands') + ' tracked · preview only';
+        note.textContent = 'Hand detected. Train personal gestures below to enable confidence and spoken phrases.';
+        setIntentBadge('UNTRAINED');
+      } else if (performance.now() - lastInferenceAt > INFERENCE_INTERVAL_MS){
         const rawSeq = resampleSequence(liveBuffer, SEQ_LEN, CAPTURE_WINDOW_MS);
         if (rawSeq){
           lastInferenceAt = performance.now();
+          label.textContent = 'predicted class';
+          note.textContent = 'Hand tracked · personal gesture model active.';
           if (liveMode) runInference(rawSeq); else previewInference(rawSeq);
+        } else {
+          const fresh = liveBuffer.filter(frame => frame.t >= now - CAPTURE_WINDOW_MS).length;
+          const completeWindow = now - liveBuffer[0].t >= CAPTURE_WINDOW_MS;
+          label.textContent = 'model status';
+          readout.textContent = 'Hand tracked · waiting for steady frames';
+          note.textContent = completeWindow
+            ? `Only ${fresh} tracked frames in the last ${(CAPTURE_WINDOW_MS / 1000).toFixed(1)}s. Gesture confidence needs at least 12 tracked frames/sec; the hand-pose preview above still works.`
+            : 'Hand detected. Gathering a steady gesture sequence for the personal model…';
+          pushVitals(0);
+          if (liveMode) handleNoHandFrame();
         }
       }
     } else {
       liveBuffer = [];
-      document.getElementById('currentGesture').textContent = '— no hand detected —';
+      document.getElementById('gestureReadoutLabel').textContent = 'tracking';
+      document.getElementById('currentGesture').textContent = 'No hand currently tracked';
+      document.getElementById('gestureSignalNote').textContent = 'Bring one or both hands into the camera view. The hand-pose preview needs no training.';
+      if (!model) setIntentBadge('UNTRAINED');
       pushVitals(0);
       if (liveMode) handleNoHandFrame();
     }
@@ -620,6 +652,9 @@ window.ashaSharedPause = () => {
   document.getElementById('startOverlay').style.display = 'flex';
   const button = document.getElementById('startBtn'); button.disabled = false; button.textContent = 'Start shared camera';
   setStatus(false, 'shared camera paused'); renderAutoHands([]);
+  document.getElementById('gestureReadoutLabel').textContent = 'tracking';
+  document.getElementById('currentGesture').textContent = 'Camera paused';
+  document.getElementById('gestureSignalNote').textContent = 'Start the shared camera to preview hands.';
 };
 
 const HAND_CONNECTIONS = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[0,9],[9,10],[10,11],[11,12],
