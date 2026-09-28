@@ -106,7 +106,21 @@ try {
     "posture",
   ]) {
     await p.locator(`[data-module=${module}]`).click();
-    assert.ok(await p.locator("#moduleContent h2").first().isVisible());
+    if (module === "fingerspeak") {
+      const frame = p.frameLocator("#fingerStudio");
+      await frame
+        .getByRole("heading", { name: "Gesture vocabulary", exact: true })
+        .waitFor();
+      await frame.locator('[data-tab="evaluate"]').click();
+      assert.ok(
+        await frame
+          .getByRole("heading", { name: "Model evaluation", exact: true })
+          .isVisible(),
+      );
+      await frame.locator('[data-tab="calibrate"]').click();
+    } else {
+      assert.ok(await p.locator("#moduleContent h2").first().isVisible());
+    }
   }
   await p.locator("#themeButton").click();
   await p.screenshot({

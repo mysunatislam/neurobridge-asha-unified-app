@@ -1,5 +1,6 @@
 import { Perception } from "./perception.js";
 import { GuidedCalibration } from "./calibration.js";
+import { faceStudio, paintFaceStudio } from "./face-studio.js";
 import { RequestGate, recommendations, clamp } from "./signals.js";
 import {
   supportOptions,
@@ -35,7 +36,7 @@ const read = (k, f) => {
   save = (k, v) => localStorage.setItem("asha_live_" + k, JSON.stringify(v));
 const names = {
   companion: "Asha companion",
-  facespeak: "NeuroFace Sense",
+  facespeak: "FaceSpeak · NeuroFace Sense",
   fingerspeak: "FingerSpeak",
   vitalsense: "VitalSense",
   senseassist: "SenseAssist",
@@ -69,6 +70,57 @@ let view = "welcome",
   speechCandidate = "",
   speechHeard = "",
   speechSession = 0;
+let fingerNeuralLive = false,
+  personalProfileId = null;
+function ensureFingerStudio() {
+  if ($("fingerStudio")) return;
+  const frame = document.createElement("iframe");
+  frame.id = "fingerStudio";
+  frame.className = "finger-frame";
+  frame.title = "FingerSpeak full calibration, speak and evaluation studio";
+  frame.allow = "camera 'none'; microphone 'none'";
+  frame.src = new URL(
+    "neuroface/fingerspeak.html?embedded=1&profile=" +
+      encodeURIComponent(patient?.patientId || "local"),
+    site,
+  ).href;
+  $("fingerStudioHost").append(frame);
+}
+window.addEventListener("message", (e) => {
+  if (
+    e.origin !== location.origin ||
+    e.source !== $("fingerStudio")?.contentWindow
+  )
+    return;
+  const d = e.data || {};
+  if (d.type === "asha-hand-ready") e.source.ashaSetTheme?.(settings.theme);
+  if (d.type === "asha-hand-open-face") {
+    module = "facespeak";
+    $("modeBadge").textContent = names[module];
+    show("details");
+  }
+  if (d.type === "asha-hand-height" && Number.isFinite(d.height))
+    $("fingerStudio").style.height =
+      Math.min(12000, Math.max(700, d.height)) + "px";
+  if (d.type === "asha-hand-start" && !perception.running) startMonitor();
+  if (d.type === "asha-hand-speak") say(String(d.text || "").slice(0, 250));
+  if (d.type === "asha-hand-live") {
+    fingerNeuralLive = !!d.enabled;
+    perception.neuralHandActive = fingerNeuralLive;
+    perception.setActiveModule(module);
+  }
+  if (d.type === "asha-hand-phrase" && ["patient", "details"].includes(view)) {
+    const phrase = String(d.text || "")
+      .trim()
+      .slice(0, 250);
+    if (!phrase) return;
+    if (gate.pending && /^(yes|okay|ok)[.!\s]*$/i.test(phrase))
+      confirmRequest();
+    else if (gate.pending && /^no[.!\s]*$/i.test(phrase))
+      $("confirmNo").click();
+    else propose("message", "hand", phrase);
+  }
+});
 let settings = read("settings", {
     theme: matchMedia("(prefers-color-scheme: dark)").matches
       ? "dark"
@@ -107,6 +159,7 @@ function theme() {
   document.documentElement.dataset.theme = settings.theme;
   $("themeButton").textContent = settings.theme === "dark" ? "☀" : "☾";
   save("settings", settings);
+  $("fingerStudio")?.contentWindow?.ashaSetTheme?.(settings.theme);
 }
 theme();
 function show(id) {
@@ -269,10 +322,30 @@ async function copy(text) {
   }
 }
 function loadPersonal() {
+  if (personalProfileId !== patient?.patientId) {
+    // Never reuse another patient's trained model or pending request.
+    if (personalProfileId && perception.running) {
+      perception.stop();
+      monitorUI(false);
+    }
+    $("fingerStudio")?.remove();
+    fingerNeuralLive = false;
+    perception.neuralHandActive = false;
+    perception.setActiveModule(module);
+    perception.resetFaceReference();
+    pendingHandTraining = null;
+    calibration = null;
+    $("calibrationDialog").close();
+    gate.cancel();
+    $("confirmDialog").close();
+    blinkTimes = [];
+    turns.LEFT_TURN_COMPLETED = [];
+    turns.RIGHT_TURN_COMPLETED = [];
+    personalProfileId = patient?.patientId;
+  }
   trained = read("calibration_" + patient?.patientId, null);
   handMaps = read("handmap_" + patient?.patientId, {});
-  if (trained?.baseline)
-    perception.setCalibration(trained.baseline, trained.enabled);
+  perception.setCalibration(trained?.baseline, trained?.enabled || []);
 }
 async function openPatient() {
   try {
@@ -549,6 +622,7 @@ function monitorUI(on) {
     ? "Monitoring together: NeuroFace Sense · FingerSpeak · VitalSense · Posture. See Details for signal status."
     : "NeuroFace Sense · FingerSpeak · VitalSense · Posture — paused. Start support to resume.";
   if (!on) {
+    $("fingerStudio")?.contentWindow?.ashaSharedPause?.();
     screenLock?.release().catch(() => {});
     screenLock = null;
     $("fpsBadge").textContent = "Paused";
@@ -741,12 +815,33 @@ perception.addEventListener("gesture", ({ detail: e }) => {
   )
     propose("comfort", "face");
 });
+perception.addEventListener("facecommand", ({ detail: c }) => {
+  if (
+    c.command !== "okay" ||
+    calibration ||
+    gate.pending ||
+    !["patient", "details"].includes(view)
+  )
+    return;
+  if (
+    !trained?.enabled?.includes("NOD_COMPLETED") ||
+    !trained.enabled.includes("SMILE_COMPLETED")
+  )
+    return;
+  say("I am okay, thank you.");
+  perception.analysis.addLog(
+    c.timestamp,
+    "Nod + smile → I am okay, thank you",
+    "communication",
+  );
+});
 perception.addEventListener("hand", ({ detail: h }) => {
   if (calibration) return;
   if (pendingHandTraining && h.pose === pendingHandTraining.pose) {
     pendingHandTraining.count++;
-    $("handTrainStatus").textContent =
-      `${pendingHandTraining.count}/3 distinct holds captured. Relax between holds.`;
+    if ($("handTrainStatus"))
+      $("handTrainStatus").textContent =
+        `${pendingHandTraining.count}/3 distinct holds captured. Relax between holds.`;
     if (pendingHandTraining.count >= 3) {
       handMaps[pendingHandTraining.pose] = {
         kind: pendingHandTraining.kind,
@@ -754,18 +849,26 @@ perception.addEventListener("hand", ({ detail: h }) => {
       };
       save("handmap_" + patient.patientId, handMaps);
       pendingHandTraining = null;
-      $("handTrainStatus").textContent =
-        "Gesture saved. It can propose a request; confirmation is still required.";
+      if ($("handTrainStatus"))
+        $("handTrainStatus").textContent =
+          "Gesture saved. It can propose a request; confirmation is still required.";
     }
     return;
   }
-  if (!["patient", "details"].includes(view)) return;
+  if (!["patient", "details"].includes(view) || fingerNeuralLive) return;
   if (gate.pending && handMaps[h.pose]?.trained) {
     confirmRequest();
     return;
   }
   const m = handMaps[h.pose];
   if (m?.trained) propose(m.kind, "hand");
+});
+perception.addEventListener("handframe", ({ detail: d }) => {
+  $("fingerStudio")?.contentWindow?.ashaSharedFrame?.(
+    d.result,
+    perception.stream,
+    d.t,
+  );
 });
 perception.addEventListener("cue", async ({ detail: cue }) => {
   if (
@@ -815,8 +918,9 @@ perception.addEventListener("frame", ({ detail: s }) => {
   history.push({
     ear: s.raw.earMean || 0,
     smile: s.face?.smile?.smileIntensity || 0,
-    yaw: s.raw.yaw || 0,
-    pitch: s.raw.pitch || 0,
+    yaw: s.analysis?.head?.yaw || 0,
+    pitch: s.analysis?.head?.pitch || 0,
+    motion: s.analysis?.motion?.displacement || 0,
     lip: s.raw.mar || 0,
     pose: s.posture?.lean ?? s.posture?.shoulderTilt ?? 0,
     pulse: s.pulse?.signal?.at(-1) || 0,
@@ -830,6 +934,9 @@ perception.addEventListener("frame", ({ detail: s }) => {
 $("calibrateButton").onclick = async () => {
   if (!perception.running) await startMonitor();
   if (!perception.running) return;
+  module = "facespeak";
+  show("details");
+  perception.resetFaceReference();
   gate.cancel();
   calibration = new GuidedCalibration(profile.assessment);
   $("calibrationDialog").showModal();
@@ -1331,18 +1438,22 @@ function chart(id, label) {
   return `<span class="eyebrow">${label}</span><canvas id="${id}" class="chart" aria-label="${label}"></canvas>`;
 }
 function renderModule() {
+  const isFinger = module === "fingerspeak";
+  $("fingerStudioHost").hidden = !isFinger;
+  document
+    .querySelector(".studio-layout")
+    .classList.toggle("finger-full", isFinger);
+  if (isFinger) captureDock.append(viewport);
+  else if (view === "details")
+    cameraPanel.insertBefore(viewport, $("cameraStatus"));
+  perception.setActiveModule(module);
   document
     .querySelectorAll("[data-module]")
     .forEach((b) => b.classList.toggle("active", b.dataset.module === module));
   let html = "";
-  if (module === "facespeak") {
-    html = `<div class="card"><span class="eyebrow">FACE + EYES + LIPS</span><h2>Small movements. Clear meaning.</h2><p class="muted">Personal calibration separates neutral signals from your deliberate gestures. A smile alone never means an emergency.</p><div class="metrics">${metric("Blinks this session", "blinkCount", "0")}${metric("Eye openness", "earValue")}${metric("Smile activity", "smileValue")}</div>${chart("eyeChart", "EYE OPENNESS · EAR")}${chart("smileChart", "SMILE & LIP MOVEMENT")}<div class="rule"><span>Three deliberate blinks</span><strong>Water request</strong></div><div class="rule"><span>Trained smile / nod / blink</span><strong>Confirm when asked</strong></div><p class="small muted" id="faceCalibrationStatus">${trained ? "Calibrated on " + new Date(trained.savedAt).toLocaleDateString() : "Not calibrated yet. Use Calibrate patient beside the camera."}</p></div>`;
-  }
+  if (module === "facespeak") html = faceStudio();
   if (module === "fingerspeak") {
     html = `<div class="card"><span class="eyebrow">BOTH HANDS, YOUR CHOICE</span><h2>FingerSpeak</h2><p class="muted">Both hands are tracked independently. Anyone can explore this interface, regardless of assessment. Familiar poses are detected automatically; a personal mapping needs three distinct holds.</p><div id="handReadings"><div class="empty">Bring one or both hands into view.</div></div><label class="field">Gesture<select id="handPose"><option>Open palm</option><option>Index extended</option><option>Two fingers extended</option><option>Three fingers extended</option><option>Closed fingers</option></select></label><label class="field">Meaning<select id="handMeaning"><option value="help">Caregiver</option><option value="water">Water</option><option value="toilet">Toilet</option><option value="food">Food</option><option value="comfort">Comfort</option></select></label><button id="trainHand" class="primary">Learn this gesture</button><p id="handTrainStatus" class="small muted">Hold for a moment, relax, and repeat three times. Then repeat a mapped gesture to confirm a proposed request.</p><div id="savedHands"></div></div>`;
-  }
-  if (module === "facespeak") {
-    html += `<div class="card"><span class="eyebrow">NEUROFACE SENSE · LIVE OBSERVATIONS</span><h2>Lips, head and expression</h2><div class="metrics">${metric("Left eye EAR", "earLeft")}${metric("Right eye EAR", "earRight")}${metric("Lip opening · MAR", "lipValue")}${metric("Head yaw", "yawValue")}${metric("Head pitch", "pitchValue")}${metric("Head roll", "rollValue")}</div>${chart("lipChart", "LIP OPENING")}${chart("yawChart", "HEAD TURN · YAW")}${chart("pitchChart", "HEAD TILT · PITCH")}<h3>Facial movement signals</h3><div id="expressionReadings"></div><p class="small muted">Model expression strengths, not percentages of facial control or clinical muscle scores. Missing tracking is shown as unavailable. A sustained change prompts a check-in, not an automatic emergency call.</p></div>`;
   }
   if (module === "vitalsense") {
     html = `<div class="card"><span class="eyebrow">LOCAL CAMERA SIGNAL</span><h2>VitalSense</h2><p class="muted">Sit comfortably in steady light. A small forehead region supplies a color signal; motion and weak signals are rejected.</p><div class="metrics">${metric("Camera pulse estimate", "pulseValue")}${metric("Signal quality", "pulseQuality")}${metric("Window", "pulseWindow", "20 sec")}</div>${chart("pulseChart", "COLOR PULSE SIGNAL")}<p id="pulseReason" class="muted">Start the camera and allow 20 seconds.</p><p class="small muted">Experimental pulse trend, not a medical vital measurement. This camera cannot measure blood pressure, oxygen saturation or temperature. No emergency action uses this estimate.</p></div>`;
@@ -1353,7 +1464,48 @@ function renderModule() {
   if (module === "senseassist") {
     html = `<div class="card"><span class="eyebrow">YOUR WORDS, MORE CLEARLY</span><h2>SenseAssist</h2><p class="muted">Practice a phrase or clarify something you want to say. Review the heard words, then Asha suggests the closest intended meaning.</p><label class="field">Practice phrase / context (optional)<input id="speechTarget" maxlength="150" placeholder="e.g. red rabbit green"></label><div class="actions"><button id="listenSpeech" class="primary">Start listening</button><button id="stopSpeech" class="secondary" disabled>Stop</button><button id="hearTarget" class="secondary">Hear phrase</button></div><p id="speechStatus" class="small muted">Microphone speech recognition depends on your browser and may use its online service. Only the reviewed words are sent to Asha.</p><label class="field">What was heard · editable<textarea id="heardSpeech" maxlength="600" placeholder="For example: wed wabbit wghreen"></textarea></label><button id="interpretSpeech" class="primary">Make my meaning clearer →</button><div id="speechResult"></div><button id="practiceAdvice" class="text-button">Ask Asha for a practice cue →</button></div>`;
   }
+  if (isFinger) {
+    ensureFingerStudio();
+    html =
+      '<details class="card"><summary>Quick familiar-pose mappings (optional)</summary>' +
+      html +
+      "</details>";
+  }
   $("moduleContent").innerHTML = html;
+  if ($("nf-calibrate")) {
+    $("nf-calibrate").onclick = $("nf-calibrateRules").onclick = () =>
+      $("calibrateButton").click();
+    $("nf-reference").onclick = () => {
+      perception.resetFaceReference();
+      toast("Relax your face with eyes open for 45 valid frames.");
+    };
+    $("nf-clearLog").onclick = () => {
+      perception.analysis.log = [];
+      paint(perception.snapshot);
+    };
+    $("nf-exportLog").onclick = () => {
+      const url = URL.createObjectURL(
+        new Blob(
+          [
+            JSON.stringify(
+              {
+                type: "NeuroFace observations, not diagnoses",
+                events: perception.analysis.log,
+              },
+              null,
+              2,
+            ),
+          ],
+          { type: "application/json" },
+        ),
+      );
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "neuroface-observations.json";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    };
+  }
   if ($("trainHand"))
     $("trainHand").onclick = () => {
       if (!perception.running) {
@@ -1412,10 +1564,18 @@ document.querySelectorAll("[data-module]").forEach(
 function paint(s) {
   if (!s.raw || !perception.running) return;
   $("fpsBadge").textContent = s.latency + " ms";
-  $("liveSummary").innerHTML =
-    `<div><span>NeuroFace Sense</span><strong>${s.raw.facePresent ? "Face tracked" : "Searching for face"}</strong></div><div><span>FingerSpeak</span><strong>${s.hands.length} / 2 hands tracked</strong></div><div><span>Posture</span><strong>${esc(s.posture?.label || "Searching for body")}</strong></div><div><span>VitalSense</span><strong>${s.pulse?.bpm ? s.pulse.bpm + " bpm · estimate" : esc(s.pulse?.reason || "Collecting signal")}</strong></div><div><span>FaceSpeak calibration</span><strong>${trained ? "Personal" : "Needed for commands"}</strong></div>`;
+  const summary = `<div><span>NeuroFace Sense</span><strong>${s.raw.facePresent ? "Face tracked" : "Searching for face"}</strong></div><div><span>FingerSpeak</span><strong>${s.hands.length} / 2 hands tracked</strong></div><div><span>Posture</span><strong>${esc(s.posture?.label || "Searching for body")}</strong></div><div><span>VitalSense</span><strong>${s.pulse?.bpm ? s.pulse.bpm + " bpm · estimate" : esc(s.pulse?.reason || "Collecting signal")}</strong></div><div><span>FaceSpeak calibration</span><strong>${trained ? "Personal" : "Needed for commands"}</strong></div>`;
+  if ($("liveSummary").dataset.content !== summary) {
+    $("liveSummary").dataset.content = summary;
+    $("liveSummary").innerHTML = summary;
+  }
   $("liveSummary").dataset.cycles = JSON.stringify(s.cycles || {});
   if (view !== "details") return;
+  paintFaceStudio(s, trained, {
+    blink: blinkTimes.filter((t) => s.t - t < 5000).length,
+    left: turns.LEFT_TURN_COMPLETED.filter((t) => s.t - t < 8000).length,
+    right: turns.RIGHT_TURN_COMPLETED.filter((t) => s.t - t < 8000).length,
+  });
   const text = (id, v) => {
     if ($(id)) $(id).textContent = v;
   };
@@ -1492,6 +1652,7 @@ function paint(s) {
   drawChart("lipChart", "lip", "#b27077");
   drawChart("yawChart", "yaw", "#448e85");
   drawChart("pitchChart", "pitch", "#9a7fba");
+  drawChart("motionChart", "motion", "#cc9b56");
   drawChart("pulseChart", "pulse", "#448e85");
   drawChart("poseChart", "pose", "#9a7fba");
 }

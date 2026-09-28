@@ -352,12 +352,14 @@
           </aside>
           <div class="module-panel">
             <nav id="moduleTabs" class="tabs" aria-label="Sensing modules">
-              <button data-module="facespeak">NeuroFace Sense</button
+              <button data-module="facespeak">
+                FaceSpeak · NeuroFace Sense</button
               ><button data-module="fingerspeak">FingerSpeak</button
               ><button data-module="vitalsense">VitalSense</button
               ><button data-module="senseassist">SenseAssist</button
               ><button data-module="posture">Posture</button>
             </nav>
+            <div id="fingerStudioHost" hidden></div>
             <div id="moduleContent"></div>
           </div>
         </div>
@@ -562,6 +564,8 @@
     <script src="./neuroface/src/vision.js"></script>
     <script src="./neuroface/src/engine.js"></script>
     <script src="./neuroface/src/calibration.js"></script>
+    <script src="./neuroface/src/activity.js"></script>
+    <script src="./neuroface/src/lip-watch.js"></script>
     <script src="./neuroface/src/fingerspeak-signal.js"></script>
     <script type="module" src="./app/main.js"></script>
   </body>

@@ -11,6 +11,12 @@
     --text:#EAF2F3; --text-dim:#8CA0A8;
     --mono:'IBM Plex Mono', monospace; --display:'Space Grotesk', sans-serif; --body:'Inter', sans-serif;
   }
+  :root[data-theme="light"] { color-scheme:light; --bg:#f5f4ef; --surface:#fff; --surface-2:#eeeee7; --line:#dce1d9; --teal:#236357; --teal-dim:#d9edce; --amber:#945416; --red:#a63c32; --violet:#6b5693; --text:#243c36; --text-dim:#66736e; }
+  :root[data-theme="light"] .btn.primary { color:#fff; }
+  :root[data-theme="light"] .overlay-msg { background:rgba(245,244,239,.95); }
+  :root[data-theme="light"] .video-wrap { background:#dce1d9; }
+  body { min-height:0 !important; }
+  @media(max-width:600px) { header { padding:14px !important; flex-wrap:wrap; gap:12px; } .panel { padding:16px 12px !important; min-width:0; } main { min-width:0; } .tabs { flex-wrap:wrap; } .tab { padding:12px 10px !important; } .btn { min-height:44px; } .gesture-row { flex-wrap:wrap; } .overlay-msg { padding:14px !important; } }
   *{box-sizing:border-box;}
   body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--body); min-height:100vh; }
   header{ display:flex; align-items:center; justify-content:space-between; padding:20px 28px; border-bottom:1px solid var(--line); }
@@ -182,7 +188,7 @@
       <div class="subtitle">Camera-based AAC prototype · fingertip gestures → speech</div>
     </div>
   </div>
-  <div class="btn-row"><a class="btn small ghost" href="./">← NeuroFace Sense</a><div class="status-pill"><span class="dot off" id="statusDot"></span><span id="statusText">camera not started</span></div></div>
+  <div class="btn-row"><button class="btn small ghost" id="backToFace">← NeuroFace Sense</button><div class="status-pill"><span class="dot off" id="statusDot"></span><span id="statusText">camera not started</span></div></div>
 </header>
 
 <div style="max-width:1360px;margin:12px auto 0;padding:0 28px;color:var(--text-dim);font-size:12px;line-height:1.5;">FingerSpeak is a research AAC prototype, not a validated medical device. Train and test with the intended user; do not rely on it as the sole way to request urgent help. Camera analysis stays in this browser.</div>
@@ -388,6 +394,14 @@
 
 <script type="module">
 import { HandLandmarker, FilesetResolver } from "./vendor/vision_bundle.mjs";
+const EMBEDDED = window.parent !== window && new URLSearchParams(location.search).get('embedded') === '1';
+const tellParent = (data) => { if (EMBEDDED) window.parent.postMessage(data, location.origin); };
+document.getElementById('backToFace').onclick = () => {
+  if (EMBEDDED) tellParent({ type: 'asha-hand-open-face' });
+  else location.href = '../?module=facespeak';
+};
+if (!EMBEDDED) location.replace('../?module=fingerspeak');
+window.ashaSetTheme = (theme) => { document.documentElement.dataset.theme = theme === 'dark' ? 'dark' : 'light'; };
 
 // ================= config =================
 const SEQ_LEN = 20;
@@ -545,11 +559,15 @@ function renderLoop(){
   if (video.currentTime !== lastVideoTime && handLandmarker){
     lastVideoTime = video.currentTime;
     const result = handLandmarker.detectForVideo(video, performance.now());
+    processHandResult(result, performance.now());
+  }
+  if (!EMBEDDED) requestAnimationFrame(renderLoop);
+}
+function processHandResult(result, now){
     frameCount++;
     octx.clearRect(0,0,overlay.width, overlay.height);
 
     const hands = window.NF_fingerspeakSignal.orderedHands(result);
-    const now = performance.now();
     if (hands.length !== lastTrackedCount){ liveBuffer = []; lastTrackedCount = hands.length; }
     const autoHands = autoPoseTracker.update(hands, now);
     if (now - lastAutoDrawAt > 100 || hands.length === 0){ renderAutoHands(autoHands); lastAutoDrawAt = now; }
@@ -558,7 +576,7 @@ function renderLoop(){
       hands.forEach((hand, i) => drawLandmarks(hand.lm, i, hand.label));
       const stamped = { t: now, feat: window.NF_fingerspeakSignal.packHands(hands) };
 
-      if (recording) recording.frames.push(stamped);
+      if (recording && now >= recording.started) recording.frames.push(stamped);
 
       liveBuffer.push(stamped);
       const cutoff = performance.now() - LIVE_BUFFER_MAX_MS;
@@ -577,14 +595,32 @@ function renderLoop(){
       pushVitals(0);
       if (liveMode) handleNoHandFrame();
     }
-  }
-  const now = performance.now();
   if (now - lastFpsTime > 1000){
     document.getElementById('fpsReadout').textContent = frameCount + ' processed fps';
     frameCount = 0; lastFpsTime = now;
   }
-  requestAnimationFrame(renderLoop);
 }
+window.ashaSharedFrame = (result, stream, t) => {
+  if (!EMBEDDED || !stream?.active) return;
+  if (video.srcObject !== stream) { video.srcObject = stream; video.play().catch(() => {}); }
+  overlay.width = video.videoWidth || 640; overlay.height = video.videoHeight || 480;
+  document.getElementById('startOverlay').style.display = 'none';
+  running = true; setStatus(true, 'shared camera · two hands');
+  document.getElementById('wizardStartBtn').disabled = false;
+  // Preserve the observation time (not variable inference-delivery time),
+  // translated to this document's clock for capture/dwell validation.
+  processHandResult(result, t + window.parent.performance.timeOrigin - performance.timeOrigin);
+};
+window.ashaSharedPause = () => {
+  running = false; video.srcObject = null; liveBuffer = []; lastTrackedCount = 0;
+  recording = null; wizardActive = false;
+  intentState = 'REST'; candidateIdx = null; candidateStart = 0; restStreak = 0; updateConfidenceRing(0); setIntentBadge('REST');
+  document.getElementById('wizardOverlay').style.display = 'none';
+  document.getElementById('wizardStartBtn').disabled = true;
+  document.getElementById('startOverlay').style.display = 'flex';
+  const button = document.getElementById('startBtn'); button.disabled = false; button.textContent = 'Start shared camera';
+  setStatus(false, 'shared camera paused'); renderAutoHands([]);
+};
 
 const HAND_CONNECTIONS = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[0,9],[9,10],[10,11],[11,12],
   [0,13],[13,14],[14,15],[15,16],[0,17],[17,18],[18,19],[19,20],[5,9],[9,13],[13,17]];
@@ -682,12 +718,22 @@ function updateTrainAvailability(){
 // ================= burst capture + quality rejection =================
 async function captureBurst(){
   if (recording) return { ok:false, reason:'Already recording.' };
-  recording = { frames: [] };
-  await sleep(CAPTURE_WINDOW_MS + 50);
-  const frames = recording.frames;
+  const capture = { frames: [], started: performance.now() };
+  recording = capture;
+  const started = capture.started;
+  let frames = [], rawSeq = null;
+  // Wait for an actual complete signal window, including model warm-up.
+  // Original sample-count, continuity and hand-identity gates remain unchanged.
+  while (performance.now() - started < 3000) {
+    await sleep(50);
+    if (recording !== capture || !running) return { ok: false, reason: 'Camera paused during recording. Start support and try again.' };
+    const end = capture.frames.at(-1)?.t;
+    frames = capture.frames.filter(f => f.t >= end - CAPTURE_WINDOW_MS - 50);
+    rawSeq = resampleSequence(frames, SEQ_LEN, CAPTURE_WINDOW_MS);
+    if (rawSeq) break;
+  }
   recording = null;
-  const rawSeq = resampleSequence(frames, SEQ_LEN, CAPTURE_WINDOW_MS);
-  if (!rawSeq) return { ok:false, reason:'Continuous, stable hand tracking is needed for the full capture. Keep the hand in frame and retry.' };
+  if (!rawSeq) return { ok:false, reason:`No complete tracking window (${frames.length} fresh frames). Keep the same hand(s) in view, close other camera apps and retry; at least 12 tracked frames/sec are needed.` };
 
   const expectedFrames = Math.max(6, Math.round((CAPTURE_WINDOW_MS/1000) * 20));
   const coverage = Math.min(1, frames.length / expectedFrames);
@@ -878,6 +924,7 @@ let baselineModels = {
 };
 let oodPrototypes = null; // per-class {centroid, spread} built from BiGRU training data too, for OOD rejection regardless of active model
 function invalidateModel(){
+  tellParent({ type: 'asha-hand-live', enabled: false });
   if (model) model.dispose();
   model = null;
   oodPrototypes = null;
@@ -1203,8 +1250,9 @@ function renderMetricsTable(matrix, labels){
 }
 
 // ================= browser-local model persistence =================
-const MODEL_STORE = 'indexeddb://neuroface-fingerspeak-v2';
-const MODEL_META_KEY = 'neuroface-fingerspeak-meta-v2';
+const PROFILE_SUFFIX = EMBEDDED ? '-' + (new URLSearchParams(location.search).get('profile') || 'local').replace(/[^a-zA-Z0-9-]/g, '').slice(0, 64) : '';
+const MODEL_STORE = 'indexeddb://neuroface-fingerspeak-v2' + PROFILE_SUFFIX;
+const MODEL_META_KEY = 'neuroface-fingerspeak-meta-v2' + PROFILE_SUFFIX;
 document.getElementById('saveModelBtn').addEventListener('click', async () => {
   const statusEl = document.getElementById('trainStatus');
   if (!model){ return; }
@@ -1340,7 +1388,8 @@ function runInference(rawSeq){
     if (elapsed >= need){
       const gesture = gestures[candidateIdx];
       if (gesture.phrase){
-        speak(gesture.phrase); playChime(); flashCaption(gesture.phrase, gesture); logSpoken(gesture.phrase, gesture.name);
+        if (EMBEDDED) tellParent({ type: 'asha-hand-phrase', text: gesture.phrase }); else speak(gesture.phrase);
+        playChime(); flashCaption(gesture.phrase, gesture); logSpoken(gesture.phrase, gesture.name);
         reliability.latencies.push(elapsed);
         renderReliabilityTable();
       }
@@ -1409,6 +1458,7 @@ function warmupVoices(){
 }
 function speak(text){
   if (!text) return;
+  if (EMBEDDED) { tellParent({ type: 'asha-hand-speak', text }); return; }
   if (!('speechSynthesis' in window)){ console.warn('speechSynthesis not supported'); return; }
   try{
     speechSynthesis.cancel();
@@ -1510,6 +1560,7 @@ document.getElementById('threshSlider').addEventListener('input', (e) => {
   document.getElementById('threshVal').textContent = confidenceThreshold.toFixed(2);
 });
 document.getElementById('startBtn').addEventListener('click', async () => {
+  if (EMBEDDED) { tellParent({ type: 'asha-hand-start' }); return; }
   const button = document.getElementById('startBtn');
   button.textContent = 'Loading hand tracker…';
   button.disabled = true;
@@ -1522,6 +1573,7 @@ document.getElementById('startBtn').addEventListener('click', async () => {
 });
 window.addEventListener('pagehide', () => {
   running = false;
+  if (EMBEDDED) return;
   for (const track of video.srcObject?.getTracks() || []) track.stop();
 });
 document.getElementById('testVoiceBtn').addEventListener('click', () => {
@@ -1531,9 +1583,14 @@ document.getElementById('testVoiceBtn').addEventListener('click', () => {
 
 updateConfidenceRing(0);
 renderGestureList();
+if (EMBEDDED) {
+  document.getElementById('startBtn').textContent = 'Start shared camera';
+  document.getElementById('liveToggle').addEventListener('click', () => tellParent({ type: 'asha-hand-live', enabled: liveMode }));
+  document.querySelectorAll('.tab').forEach((tab) => { tab.setAttribute('role', 'button'); tab.tabIndex = 0; tab.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tab.click(); } }); });
+  const resize = () => tellParent({ type: 'asha-hand-height', height: Math.ceil(document.body.getBoundingClientRect().height) + 24 });
+  new ResizeObserver(resize).observe(document.body);
+  tellParent({ type: 'asha-hand-ready' }); resize();
+}
 </script>
-
-<script src="../asha-overlay.js" data-asha-context="FingerSpeak two-hand gesture dashboard" defer></script>
-<script src="../asha-nav.js" defer></script>
 </body>
 </html>

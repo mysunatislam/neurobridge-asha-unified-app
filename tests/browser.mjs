@@ -74,9 +74,15 @@ await p.waitForFunction(
 await p.locator("#detailsButton").click();
 await p.waitForSelector("#details:not([hidden])");
 await p.locator("[data-module=fingerspeak]").click();
-await p
-  .getByText("Both hands are tracked independently.", { exact: false })
+const finger = p.frameLocator("#fingerStudio");
+await finger
+  .getByRole("heading", { name: "Gesture vocabulary", exact: true })
   .waitFor();
+await finger.locator('[data-tab="evaluate"]').click();
+await finger
+  .getByRole("heading", { name: "Model evaluation", exact: true })
+  .waitFor();
+await finger.locator('[data-tab="calibrate"]').click();
 await p.screenshot({
   path: "artifacts/fingerspeak-mobile.png",
   fullPage: true,

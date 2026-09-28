@@ -19,11 +19,6 @@
       "permanent": false
     },
     {
-      "source": "/neuroface/fingerspeak.html",
-      "destination": "/?module=fingerspeak",
-      "permanent": false
-    },
-    {
       "source": "/senseassist/:path*",
       "destination": "/?module=senseassist",
       "permanent": false

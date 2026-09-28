@@ -24,7 +24,5 @@ modules
 neuroface/index.html
 neuroface/app.js
 neuroface/style.css
-neuroface/fingerspeak.html
 neuroface/utils/maira.js
 neuroface/utils/tf-models.js
-neuroface/vendor/tf.min.js

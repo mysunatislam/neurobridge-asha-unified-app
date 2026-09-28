@@ -5,6 +5,7 @@ import {
   SustainedCue,
 } from "./signals.js";
 import { HandTracks } from "./hand-tracks.js";
+import { FaceAnalysis } from "./face-analysis.js";
 export class Perception extends EventTarget {
   constructor(video, canvas) {
     super();
@@ -16,7 +17,7 @@ export class Perception extends EventTarget {
     this.handTracker = new NF_fingerspeakSignal.PoseTracker(800);
     this.rest = new RestTracker();
     this.postureCue = new SustainedCue();
-    this.lipCue = new SustainedCue();
+    this.analysis = new FaceAnalysis();
     this.rgb = [];
     this.pulse = { bpm: null, reason: "Collecting signal" };
     this.snapshot = {};
@@ -32,6 +33,17 @@ export class Perception extends EventTarget {
     this.engine = new NF_engine.Engine({ baseline: b });
     this.enabled = enabled;
   }
+  resetFaceReference() {
+    this.analysis.reset();
+  }
+  setActiveModule(name) {
+    this.activeModule = name;
+    this.handsPriority = name === "fingerspeak" || !!this.neuralHandActive;
+    this.worker?.postMessage({
+      type: "schedule",
+      handsPriority: this.handsPriority,
+    });
+  }
   async start() {
     if (this.running) return;
     this.cycles = { face: 0, hand: 0, pose: 0, pulse: 0 };
@@ -41,37 +53,57 @@ export class Perception extends EventTarget {
         facingMode: "user",
         width: { ideal: 640 },
         height: { ideal: 480 },
-        frameRate: { ideal: 24, max: 30 },
+        frameRate: { ideal: 30, max: 30 },
       },
       audio: false,
     });
     this.video.srcObject = this.stream;
     await this.video.play();
     this.running = true;
+    this.setActiveModule(this.activeModule);
     try {
       await this.initWorker();
     } catch (e) {
       this.worker?.terminate();
       this.worker = null;
+      this.handWorker?.terminate();
+      this.handWorker = null;
       this.emit("status", "Using compatible camera mode…");
       await this.initMain();
     }
     this.running = true;
     this.emit("status", "Camera active · all sensing shares one stream");
+    this.setActiveModule(this.activeModule);
     this.loop();
   }
   async initWorker() {
+    // Separate one-frame queues keep real hand samples flowing during pose work.
+    // Both workers consume this same MediaStream; neither opens another camera.
+    try {
+      await Promise.all([
+        this.createWorker("face", "worker"),
+        this.createWorker("hand", "handWorker"),
+      ]);
+    } catch {
+      this.worker?.terminate();
+      this.handWorker?.terminate();
+      this.worker = this.handWorker = null;
+      await this.createWorker("all", "worker");
+    }
+  }
+  async createWorker(role, property) {
     await new Promise((resolve, reject) => {
-      this.worker = new Worker(new URL("./vision-worker.js", import.meta.url));
+      const worker = new Worker(new URL("./vision-worker.js", import.meta.url));
+      this[property] = worker;
       const timeout = setTimeout(
         () => reject(Error("Worker startup timeout")),
         25000,
       );
-      this.worker.onerror = () => {
+      worker.onerror = () => {
         clearTimeout(timeout);
         reject(Error("Worker unavailable"));
       };
-      this.worker.onmessage = ({ data: d }) => {
+      worker.onmessage = ({ data: d }) => {
         if (d.type === "ready") {
           clearTimeout(timeout);
           resolve();
@@ -79,14 +111,20 @@ export class Perception extends EventTarget {
           clearTimeout(timeout);
           reject(Error(d.message));
         } else if (d.type === "result") {
-          this.busy = false;
-          this.result(d);
+          if (role === "hand") {
+            this.handBusy = false;
+            if (this.running) this.consumeHands(d.hand, d.t);
+          } else {
+            this.busy = false;
+            this.result(d);
+          }
         } else if (d.type === "frameError") {
-          this.busy = false;
+          if (role === "hand") this.handBusy = false;
+          else this.busy = false;
           this.emit("status", "Tracking interrupted. Reposition the camera.");
         }
       };
-      this.worker.postMessage({ type: "init" });
+      worker.postMessage({ type: "init", role });
     });
   }
   async initMain() {
@@ -143,11 +181,33 @@ export class Perception extends EventTarget {
     if (!this.running) return;
     const t = performance.now();
     if (
+      this.handWorker &&
+      !document.hidden &&
+      !this.handBusy &&
+      this.video.readyState >= 2 &&
+      this.video.currentTime !== this.lastHandTime &&
+      t - (this.lastHandFrame || 0) >= (this.handsPriority ? 16 : 250)
+    ) {
+      this.handBusy = true;
+      this.lastHandTime = this.video.currentTime;
+      this.lastHandFrame = t;
+      const worker = this.handWorker;
+      createImageBitmap(this.video)
+        .then((bitmap) => {
+          if (!this.running || this.handWorker !== worker)
+            return bitmap.close();
+          worker.postMessage({ type: "frame", bitmap, t }, [bitmap]);
+        })
+        .catch(() => {
+          this.handBusy = false;
+        });
+    }
+    if (
       !document.hidden &&
       !this.busy &&
       this.video.readyState >= 2 &&
       this.video.currentTime !== this.lastTime &&
-      t - (this.lastFrame || 0) > 45
+      t - (this.lastFrame || 0) >= 25
     ) {
       this.busy = true;
       this.lastTime = this.video.currentTime;
@@ -161,9 +221,12 @@ export class Perception extends EventTarget {
             face = this.face.detectForVideo(this.video, t);
           let hand = null,
             pose = null;
-          const handDue = (t - this.lastHand) / 250,
+          const handDue = (t - this.lastHand) / (this.handsPriority ? 1 : 250),
             poseDue = (t - this.lastPose) / 500;
-          if (handDue >= 1 && handDue >= poseDue) {
+          if (
+            handDue >= 1 &&
+            (this.handsPriority ? poseDue < 1 : handDue >= poseDue)
+          ) {
             hand = this.hand.detectForVideo(this.video, t);
             this.lastHand = t;
           } else if (poseDue >= 1) {
@@ -201,37 +264,32 @@ export class Perception extends EventTarget {
     if (!this.running) return;
     this.cycles.face++;
     const f = this.extractor.extract(d.face, this.video, d.t),
-      r = this.engine.process({ ...f, commandsEnabled: false });
+      // The engine classifies intent; only the parent confirmation gate may act.
+      r = this.engine.process({ ...f, commandsEnabled: true });
     this.faceResult = d.face;
+    const analysis = this.analysis.update(
+      d.face.faceLandmarks?.[0],
+      f,
+      r,
+      this.engine.baseline,
+      d.t,
+    );
     if (d.pose) {
       this.cycles.pose++;
       this.poseResult = d.pose;
       this.posture = poseFeatures(d.pose.landmarks?.[0], this.posture);
       this.poseAt = d.t;
     }
-    if (d.hand) {
-      this.cycles.hand++;
-      this.handResult = d.hand;
-      this.handTracks ??= new HandTracks();
-      const hands = this.handTracks.update(
-        NF_fingerspeakSignal.orderedHands(d.hand),
-        d.t,
-      );
-      this.hands = this.handTracker.update(hands, d.t);
-      const seen = new Set();
-      for (const h of this.hands) {
-        seen.add(h.id);
-        if (this.handStates[h.id] !== h.pose && h.pose !== "Observing…")
-          this.emit("hand", { ...h, t: d.t });
-        this.handStates[h.id] = h.pose;
-      }
-      for (const k of Object.keys(this.handStates))
-        if (!seen.has(k)) delete this.handStates[k];
-    }
+    if (d.hand) this.consumeHands(d.hand, d.t);
     for (const e of r.events) {
       if (e.type === "BLINK_COMPLETED") this.blinks++;
-      this.emit("gesture", e);
+      this.emit("gesture", {
+        ...e,
+        smiling: !!r.smile?.smileDetected,
+        smileIntensity: r.smile?.smileIntensity || 0,
+      });
     }
+    for (const command of r.commands || []) this.emit("facecommand", command);
     const poseValid = this.posture?.valid && d.t - this.poseAt < 1200;
     const rest = this.rest.update({
       t: d.t,
@@ -242,27 +300,12 @@ export class Perception extends EventTarget {
     if (rest) this.emit("cue", rest);
     if (this.postureCue.update(this.posture?.sideways, !!poseValid, d.t))
       this.emit("cue", "posture");
-    const lipAsym =
-      r.accepted &&
-      Math.abs(f.yaw - this.engine.baseline.neutralYaw) < 15 &&
-      Math.max(f.mouthSmileLeft, f.mouthSmileRight) < 0.18 &&
-      Math.abs(
-        f.mouthCornerLeftY -
-          this.engine.baseline.cornerLeftY -
-          (f.mouthCornerRightY - this.engine.baseline.cornerRightY),
-      ) > 0.035;
-    if (
-      this.lipCue.update(
-        lipAsym,
-        r.accepted && this.engine.baseline.calibrated,
-        d.t,
-      )
-    )
-      this.emit("cue", "face_change");
+    if (analysis.lip?.fired) this.emit("cue", "face_change");
     this.samplePulse(d.face, f, d.t);
     this.cycles.pulse++;
     this.snapshot = {
       cycles: { ...this.cycles },
+      analysis,
       blendshapes: Object.fromEntries(
         (d.face.faceBlendshapes?.[0]?.categories || []).map((c) => [
           c.categoryName,
@@ -282,6 +325,30 @@ export class Perception extends EventTarget {
     };
     this.emit("frame", this.snapshot);
     this.draw();
+  }
+  consumeHands(hand, t) {
+    if (hand) {
+      this.emit("handframe", { result: hand, t });
+      this.cycles.hand++;
+      this.handResult = hand;
+      this.handTracks ??= new HandTracks();
+      const hands = this.handTracks.update(
+        NF_fingerspeakSignal.orderedHands(hand),
+        t,
+      );
+      this.hands = this.handTracker.update(hands, t);
+      const seen = new Set();
+      for (const h of this.hands) {
+        seen.add(h.id);
+        if (this.handStates[h.id] !== h.pose && h.pose !== "Observing…")
+          this.emit("hand", { ...h, t });
+        this.handStates[h.id] = h.pose;
+      }
+      for (const k of Object.keys(this.handStates))
+        if (!seen.has(k)) delete this.handStates[k];
+    }
+    this.snapshot.hands = this.hands || [];
+    this.snapshot.cycles = { ...this.cycles };
   }
   samplePulse(result, f, t) {
     const lm = result.faceLandmarks?.[0];
@@ -414,6 +481,14 @@ export class Perception extends EventTarget {
       ],
       "#b1a0ff",
     );
+    const faceLm = this.faceResult?.faceLandmarks?.[0];
+    for (const ids of [NF_LM.browL, NF_LM.browR, NF_LM.contour]) {
+      lines(
+        faceLm,
+        ids.slice(1).map((id, i) => [ids[i], id]),
+        "#63e5c4",
+      );
+    }
   }
   async enableYolo() {
     if (this.yoloWorker) {
@@ -464,6 +539,11 @@ export class Perception extends EventTarget {
     this.video.srcObject = null;
     this.worker?.terminate();
     this.worker = null;
+    this.handWorker?.terminate();
+    this.handWorker = null;
+    this.handBusy = false;
+    this.lastHandTime = this.lastTime = null;
+    this.lastHandFrame = this.lastFrame = 0;
     for (const m of [this.face, this.hand, this.pose]) m?.close();
     this.face = this.hand = this.pose = null;
     this.yoloWorker?.terminate();
@@ -471,6 +551,7 @@ export class Perception extends EventTarget {
     this.yoloEnabled = false;
     this.busy = false;
     this.rest.reset();
+    this.analysis.reset();
     this.rgb = [];
     this.emit("status", "Monitoring paused");
   }

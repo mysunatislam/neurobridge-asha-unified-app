@@ -62,7 +62,17 @@ try {
           height: 480,
         });
         const ctx = canvas.getContext("2d");
-        const draw = () => ctx.drawImage(image, 0, 0, 640, 480);
+        window.fixtureImage = image;
+        const draw = () => {
+          if (window.fixtureFit) {
+            // A full-resolution hand close-up is outside the original capture
+            // distance gate. Present the unchanged fixture at normal arm length.
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(0, 0, 640, 480);
+            const height = 520 * window.fixtureImage.height / window.fixtureImage.width;
+            ctx.drawImage(window.fixtureImage, 60, (480 - height) / 2, 520, height);
+          } else ctx.drawImage(window.fixtureImage, 0, 0, 640, 480);
+        };
         draw();
         window.fixtureTimer = setInterval(draw, 40);
         window.fixtureStream = canvas.captureStream(25);
@@ -114,6 +124,22 @@ try {
     );
     checked.push(module);
     if (module === "facespeak") {
+      for (const heading of [
+        "Eye Analysis",
+        "Muscle Activity",
+        "Smile Analysis",
+        "Lip Control",
+        "Facial Motion",
+        "Head Movement",
+        "Activity Log",
+      ])
+        assert.equal(
+          await page
+            .getByRole("heading", { name: new RegExp(heading) })
+            .count(),
+          1,
+        );
+      assert.notEqual(await page.locator("#nf-value-AU4").textContent(), "—");
       await page.screenshot({
         path: "artifacts/neuroface-light-mobile.png",
         fullPage: true,
@@ -122,6 +148,62 @@ try {
       await page.screenshot({
         path: "artifacts/neuroface-dark-mobile.png",
         fullPage: true,
+      });
+    }
+    if (module === "fingerspeak") {
+      const frame = page.frameLocator("#fingerStudio");
+      await frame.locator("#gestureList .gesture-row").first().waitFor();
+      await page.evaluate(async () => {
+        const im = new Image();
+        im.src = "/artifacts/hands-test.jpg";
+        await im.decode();
+        window.fixtureFit = true;
+        window.fixtureImage = im;
+      });
+      await page.waitForFunction(
+        () =>
+          document
+            .getElementById("fingerStudio")
+            .contentDocument.getElementById("handCount")
+            .textContent.includes("2/2"),
+        null,
+        { timeout: 25000 },
+      );
+      assert.equal(
+        await frame
+          .locator("body")
+          .evaluate(() => document.documentElement.scrollWidth > innerWidth),
+        false,
+      );
+      const record = frame
+        .locator("#gestureList .gesture-row")
+        .first()
+        .getByRole("button", { name: "Record", exact: true });
+      await record.click();
+      await frame.locator("#captureQuality.ok").waitFor({ timeout: 15000 });
+      assert.ok(
+        (await frame.locator("#sessionNote").textContent()).includes(
+          "1 total samples",
+        ),
+      );
+      await frame.locator('[data-tab="evaluate"]').click();
+      assert.equal(
+        await frame
+          .getByRole("heading", { name: "Model evaluation", exact: true })
+          .isVisible(),
+        true,
+      );
+      await frame.locator('[data-tab="calibrate"]').click();
+      await page.screenshot({
+        path: "artifacts/fingerspeak-full-mobile.png",
+        fullPage: true,
+      });
+      await page.evaluate(async () => {
+        const im = new Image();
+        im.src = "/artifacts/portrait-test.jpg";
+        await im.decode();
+        window.fixtureFit = false;
+        window.fixtureImage = im;
       });
     }
   }
@@ -145,6 +227,8 @@ try {
   assert.equal(errors.length, 0);
   const report = {
     oneCameraAcrossModules: true,
+    bothHandsDetected: true,
+    realCalibrationSampleAccepted: true,
     activeModules: checked,
     continuesOnPatientPage: true,
     stopsOnPause: true,
@@ -155,6 +239,25 @@ try {
     "artifacts/shared-camera-verification.json",
     JSON.stringify(report, null, 2),
   );
+} catch (error) {
+  console.log(
+    "Browser check context:",
+    await page.evaluate(() => ({
+      errors: document.getElementById("toast")?.textContent,
+      handQuality: document
+        .getElementById("fingerStudio")
+        ?.contentDocument?.getElementById("captureQuality")?.textContent,
+      handFps: document
+        .getElementById("fingerStudio")
+        ?.contentDocument?.getElementById("fpsReadout")?.textContent,
+    })),
+    errors,
+  );
+  await page.screenshot({
+    path: "artifacts/shared-camera-failure.png",
+    fullPage: true,
+  });
+  throw error;
 } finally {
   await browser.close();
 }

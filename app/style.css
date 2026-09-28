@@ -78,6 +78,129 @@
 .module-health strong {
   color: var(--ink);
 }
+.face-studio-title {
+  background: linear-gradient(120deg, var(--mint), var(--card));
+}
+.face-module-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.face-module-grid .card {
+  margin: 0;
+  padding: 20px;
+}
+.face-module-grid h3 {
+  font-size: 1.12rem;
+  letter-spacing: -0.02em;
+}
+.face-module-grid h3 small {
+  display: block;
+  margin: 6px 0 0;
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+.face-module-grid .metric {
+  min-width: 0;
+  padding: 10px;
+  margin-bottom: 8px;
+}
+.face-module-grid .metric strong {
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+.face-module-grid .metrics {
+  gap: 7px;
+}
+.face-au-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.face-au {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  background: var(--soft);
+}
+.face-au label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.76rem;
+}
+.face-au progress,
+#nf-lipProgress {
+  width: 100%;
+  height: 10px;
+  margin-top: 10px;
+  accent-color: var(--accent);
+}
+.face-log {
+  grid-column: 1 / -1;
+}
+.face-event-log {
+  max-height: 270px;
+  overflow: auto;
+  font-size: 0.84rem;
+}
+.face-event-log p {
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+  margin: 0;
+}
+.face-event-log time {
+  color: var(--muted);
+  margin-right: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.observation-status {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--soft);
+  padding: 14px;
+  font-size: 0.82rem;
+}
+.face-studio .rule {
+  gap: 10px;
+  font-size: 0.82rem;
+}
+.face-studio .rule small {
+  display: block;
+  color: var(--muted);
+}
+.finger-frame {
+  width: 100%;
+  height: 2200px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  display: block;
+  margin-bottom: 20px;
+}
+.studio-layout.finger-full {
+  grid-template-columns: 1fr;
+}
+.finger-full .camera-panel {
+  position: static;
+}
+.finger-full #liveSummary {
+  display: none;
+}
+@media (max-width: 1200px) {
+  .face-module-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 450px) {
+  .face-au-grid {
+    grid-template-columns: 1fr;
+  }
+  .face-module-grid .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 body {
   margin: 0;
   background: var(--bg);
