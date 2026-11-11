@@ -2,7 +2,10 @@
 // eye dot follows where the eyes look, a 12-dot calibration measures accuracy and picks a board,
 // looking at "Water" proposes a request and looking at "Yes, send" confirms it. Accuracy for two
 // halves reaches every word in steps; blink scanning needs no calibration. Noisy eyes get a
-// smaller board or none. Also: the spelling keyboard and Care journal open inside the app.
+// smaller board or none. Typing with the eyes: "apple" letter by letter (a look opens A–E, the next
+// look or a slow blink picks the letter), word suggestions, Speak it, and a sentence sent and
+// confirmed by gaze; the same by halves and by blink scanning. Also: the spelling keyboard and Care
+// journal open inside the app.
 //   node tests/eyespeak-browser.mjs   (needs the dev server, NEXT_TEST_URL, default http://127.0.0.1:4180)
 // The camera is replaced by a fake engine that emits the same "landmarks" events as the real one,
 // with 478 face points whose irises move with a simulated point of gaze. This proves the software
@@ -244,6 +247,98 @@ async function startEyes(page) {
   await page.getByTestId("board-back").click();
   assert.deepEqual(await tileIds(page), ["g-wft", "g-rest"]);
   console.log("  2-halves accuracy: More words, then Water, food or toilet, then Water by slow blink, confirmed by looking; eyes closed 2 s went back");
+  // Typing at this accuracy: two halves at a time, A is a few looks.
+  await page.getByRole("button", { name: "Close" }).click();
+  await page.getByTestId("open-spell").click();
+  await page.locator("[data-testid=gaze-board][data-spell][data-size='steps']").waitFor();
+  assert.deepEqual(await tileIds(page), ["g-am", "g-nz"]);
+  for (let i = 0; i < 6 && !(await page.locator('[data-tile="k-a"]').count()); i++) await page.locator("[data-tile]").first().click();
+  await page.locator('[data-tile="k-a"]').click();
+  assert.equal(await page.getByTestId("spell-text").getAttribute("data-text"), "a");
+  assert.deepEqual(await tileIds(page), ["g-am", "g-nz"], "after a letter, the halves start from the top");
+  await context.close();
+}
+
+// ---------- 1e. Typing with the eyes: any word letter by letter, a suggestion, then speak and send ----------
+// "apple": A–E then A (by slow blink, the eyes still where A–E was), P–T then P, P–T then P, K–O
+// then L, A–E then E. Between looks the eyes glance at the message, as a person reads what they wrote.
+{
+  const { context, page } = await setup();
+  await startEyes(page);
+  await page.getByRole("button", { name: "Start calibration" }).click();
+  await page.getByTestId("accuracy").waitFor({ timeout: 60000 });
+  assert.equal(await page.getByTestId("board-size").textContent(), "9 tiles");
+  await page.getByTestId("open-spell").click();
+  const board = page.locator("[data-testid=gaze-board][data-spell][data-size='9']");
+  await board.waitFor();
+  const typed = () => page.getByTestId("spell-text").getAttribute("data-text");
+  assert.deepEqual(await tileIds(page), ["g-ae", "g-fj", "g-ko", "g-pt", "g-uz", "g-words", "k-space", "k-delete", "g-done"]);
+  assert.equal(await typed(), "");
+  const readMessage = async () => {
+    await page.getByTestId("spell-text").evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      window.__look = { x: (r.left + r.width / 2) / innerWidth, y: (r.top + r.height / 2) / innerHeight };
+    });
+    // Long enough for a tile still under the eyes after the layout changed to be released.
+    await page.waitForTimeout(1300);
+  };
+  const lookUntil = async (id, done) => {
+    await readMessage();
+    await lookAtTile(page, id);
+    await page.waitForFunction(done, null, { timeout: 10000 });
+  };
+  const opened = (first) => `document.querySelector('[data-tile="${first}"]') !== null`;
+  const text = (t) => `document.querySelector('[data-testid=spell-text]')?.dataset.text === ${JSON.stringify(t)}`;
+  const started = Date.now();
+  await lookUntil("g-ae", opened("k-a"));
+  assert.deepEqual(await tileIds(page), ["k-a", "k-b", "k-c", "k-d", "k-e", "k-back"]);
+  await page.waitForTimeout(500);
+  await slowBlink(page);
+  await page.waitForFunction(text("a"));
+  assert.equal(await board.getAttribute("data-chosen-by"), "blink", "the slow blink typed A");
+  for (const [grp, key, after] of [["g-pt", "k-p", "ap"], ["g-pt", "k-p", "app"], ["g-ko", "k-l", "appl"], ["g-ae", "k-e", "apple"]]) {
+    await lookUntil(grp, opened(key));
+    await lookUntil(key, text(after));
+  }
+  assert.equal(await page.getByTestId("spell-text").textContent(), "APPLE");
+  console.log(`  typed "apple" with the eyes in ${((Date.now() - started) / 1000).toFixed(1)} s (10 looks, one slow blink)`);
+  // Words finish what is typed; Space ends the word.
+  await lookUntil("g-words", opened("w-apples"));
+  await lookUntil("k-back", opened("g-ae"));
+  await lookUntil("k-space", text("apple "));
+  // Speak it aloud.
+  await lookUntil("g-done", opened("k-speak"));
+  await lookUntil("k-speak", "window.__utterances.includes('Apple')");
+  await page.getByTestId("board-note").getByText("Said: Apple").waitFor();
+  // A whole sentence from suggestions: Words, then I; Words, then need; Words, then water.
+  await lookUntil("g-done", opened("k-clear"));
+  await lookUntil("k-clear", text(""));
+  for (const [w, after] of [["w-i", "i "], ["w-need", "i need "], ["w-water", "i need water "]]) {
+    await lookUntil("g-words", opened(w));
+    await lookUntil(w, text(after));
+  }
+  // Send it: the same confirmation as any request, answered by looking at Yes, send.
+  await page.waitForTimeout(2600); // the request cooldown after speaking
+  await lookUntil("g-done", opened("k-send"));
+  await lookUntil("k-send", opened("confirm-yes"));
+  await page.getByTestId("board-note").getByText("Send to your caregiver: “I need water”?").waitFor();
+  await page.waitForTimeout(800);
+  await lookAtTile(page, "confirm-yes");
+  await page.getByTestId("board-note").getByText("Recognised on this device").waitFor();
+  await page.waitForFunction(text(""));
+  assert.equal(await page.locator('[data-tile="g-ae"]').count(), 1, "back to the letters, ready for the next message");
+  // Closing the eyes for two seconds leaves a group of letters, like Back.
+  await lookUntil("g-uz", opened("k-z"));
+  await page.waitForTimeout(500);
+  await slowBlink(page, 2200);
+  await page.waitForFunction(opened("g-ae"));
+  // Touch types too.
+  await page.locator('[data-tile="g-fj"]').click();
+  await page.locator('[data-tile="k-h"]').click();
+  await page.locator('[data-tile="g-fj"]').click();
+  await page.locator('[data-tile="k-i"]').click();
+  assert.equal(await typed(), "hi");
+  console.log("  then a suggestion, Space, Speak it, a 3-word sentence from suggestions, sent and confirmed by gaze");
   await context.close();
 }
 
@@ -291,6 +386,19 @@ async function startEyes(page) {
   assert.equal(await page.evaluate(() => window.__utterances.length), spoken, "natural blinks say nothing");
   assert.equal(await page.getByTestId("board-note").textContent(), "Recognised on this device. Connect a caregiver to deliver requests.");
   console.log("  blink scanning without calibration: Water and Yes, send chosen by slow blinks; a blink as the light moved and natural blinks chose nothing");
+  // Typing by blink scanning: A–E is lit first, then A.
+  await page.evaluate(() => (window.__blinkEvery = 0));
+  await page.getByRole("button", { name: "Close" }).click();
+  await page.getByTestId("open-spell-scan").click();
+  await page.locator("[data-testid=gaze-board][data-spell][data-mode='scan']").waitFor();
+  await page.locator('[data-tile="g-ae"][data-scan]').waitFor({ timeout: 20000 });
+  await page.waitForTimeout(350);
+  await slowBlink(page);
+  await page.locator('[data-tile="k-a"][data-scan]').waitFor({ timeout: 20000 });
+  await page.waitForTimeout(350);
+  await slowBlink(page);
+  await page.waitForFunction(() => document.querySelector("[data-testid=spell-text]")?.dataset.text === "a");
+  console.log("  typing by blink scanning: A–E, then A");
   await context.close();
 }
 
@@ -317,7 +425,7 @@ async function startEyes(page) {
   await page.goto(base + "/dashboard/patient/communicate");
   await page.getByRole("link", { name: /^EyeSpeak/ }).click();
   await page.waitForURL("**/dashboard/patient/eyespeak");
-  await page.getByRole("link", { name: /Letters and phrases/ }).click();
+  await page.getByRole("link", { name: /Full keyboard, phrases and Bangla/ }).click();
   await page.waitForURL("**/dashboard/patient/eyespeak/keyboard");
   const kb = page.frameLocator('iframe[title="Spell a message"]');
   await kb.locator("[data-tiles] button").first().waitFor();
@@ -352,4 +460,4 @@ async function startEyes(page) {
 
 await browser.close();
 assert.deepEqual(errors, [], "no page errors");
-console.log("EyeSpeak browser: visible eye tracking, calibration with measured accuracy, adaptive board, steps of two halves, blink scanning without calibration, gaze request and confirmation, noisy-eye fallback, keyboard and Care in the app, phone layout passed");
+console.log("EyeSpeak browser: visible eye tracking, calibration with measured accuracy, adaptive board, steps of two halves, blink scanning without calibration, typing with the eyes, gaze request and confirmation, noisy-eye fallback, keyboard and Care in the app, phone layout passed");

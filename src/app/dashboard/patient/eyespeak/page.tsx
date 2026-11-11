@@ -47,7 +47,7 @@ export default function EyeSpeakPage() {
   // Face results per second, shown so a slow device is visible (gaze selection needs steady results).
   const rate = useRef({ last: 0, fps: 0 });
   const [fps, setFps] = useState(0);
-  const [overlay, setOverlay] = useState<null | "full" | "check" | "board" | "scan">(null);
+  const [overlay, setOverlay] = useState<null | "full" | "check" | "board" | "scan" | "spell" | "spell-scan">(null);
   const [result, setResult] = useState<CalibrationResult | null>(null);
   const [problem, setProblem] = useState("");
   useEffect(() => () => eyeSpeakStore.set({ boardOpen: false, inUse: false }), []);
@@ -89,7 +89,7 @@ export default function EyeSpeakPage() {
     setOverlay(null);
     if (reason) setProblem(reason);
   };
-  const openBoard = (kind: "board" | "scan" = "board") => {
+  const openBoard = (kind: "board" | "scan" | "spell" | "spell-scan" = "board") => {
     eyeSpeakStore.set({ boardOpen: true });
     setOverlay(kind);
   };
@@ -300,13 +300,26 @@ export default function EyeSpeakPage() {
       </section>
 
       <section aria-labelledby="spell-title" className="mb-6">
-        <h2 id="spell-title" className="mb-3 text-base font-semibold text-ink">
-          Spell a message
+        <h2 id="spell-title" className="text-base font-semibold text-ink">
+          5. Type a message with your eyes
         </h2>
-        <Link href="/dashboard/patient/eyespeak/keyboard" className="group flex items-center gap-4 rounded-2xl bg-white px-5 py-4 ring-1 ring-line hover:bg-wash">
+        <p className="mt-0.5 mb-3 text-sm text-muted">
+          Write any word or sentence, letter by letter. Look at a group of letters (A–E, F–J …), then at your letter, and hold your gaze or blink slowly. Word suggestions finish a word in one look: A, then Words, then “apple”. When you’re done, Asha says it aloud, or sends it to your caregiver after you confirm.
+          {size === 2 && " Your accuracy fits two halves of the screen, so each letter takes a few looks, half by half."}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={() => openBoard("spell")} disabled={!size || camera !== "on"} className={DIM} data-testid="open-spell">
+            Type with your eyes
+          </Button>
+          <Button variant="secondary" onClick={() => openBoard("spell-scan")} disabled={!tracking} className={DIM} data-testid="open-spell-scan">
+            Type by blink scanning
+          </Button>
+        </div>
+        {!size && <p className="mt-2 text-xs text-muted">Looking needs a calibration that is accurate enough. Blink scanning works without one.</p>}
+        <Link href="/dashboard/patient/eyespeak/keyboard" className="group mt-4 flex items-center gap-4 rounded-2xl bg-white px-5 py-4 ring-1 ring-line hover:bg-wash">
           <span className="min-w-0 flex-1">
-            <span className="block font-medium text-ink">Letters and phrases</span>
-            <span className="block text-sm text-muted">English and Bangla letters, word suggestions and switch scanning. Letter keys are small, so use touch or a switch there.</span>
+            <span className="block font-medium text-ink">Full keyboard, phrases and Bangla</span>
+            <span className="block text-sm text-muted">English and Bangla letters, saved phrases and switch scanning. Its keys are small, so use touch or a switch there.</span>
           </span>
           <ChevronIcon size={18} className="shrink-0 text-muted" />
         </Link>
@@ -315,6 +328,8 @@ export default function EyeSpeakPage() {
       {(overlay === "full" || overlay === "check") && <Calibration mode={overlay} model={es.model} feed={feed} onDone={finished} onCancel={stopped} />}
       {overlay === "board" && size !== 0 && es.model && <Board size={size} model={es.model} dwellMs={es.dwellMs} showDot={es.showDot} feed={feed} onExit={closeBoard} />}
       {overlay === "scan" && <Board size={9} mode="scan" model={es.model} dwellMs={es.dwellMs} showDot={false} feed={feed} onExit={closeBoard} />}
+      {overlay === "spell" && size !== 0 && es.model && <Board spell size={size} model={es.model} dwellMs={es.dwellMs} showDot={es.showDot} feed={feed} onExit={closeBoard} />}
+      {overlay === "spell-scan" && <Board spell size={9} mode="scan" model={es.model} dwellMs={es.dwellMs} showDot={false} feed={feed} onExit={closeBoard} />}
     </div>
   );
 }

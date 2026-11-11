@@ -41,7 +41,9 @@ export const BOARD_LABEL: Record<BoardSize, string> = {
   0: "Not reliable enough yet",
 };
 
-export type Tile = { id: string; label: string; bn: string; say: string; need?: "water" | "food" | "toilet" | "comfort" | "help" };
+/** What a typing key does (speller.js): add a letter, finish a word, delete, speak or send the text… */
+export type KeyAct = { kind: string; ch?: string; word?: string };
+export type Tile = { id: string; label: string; bn: string; say: string; need?: "water" | "food" | "toilet" | "comfort" | "help"; act?: KeyAct };
 
 const YES: Tile = { id: "yes", label: "Yes", bn: "হ্যাঁ", say: "Yes" };
 const NO: Tile = { id: "no", label: "No", bn: "না", say: "No" };
@@ -64,7 +66,7 @@ export const BOARDS: Record<Exclude<BoardSize, 0>, { cols: number; rows: number;
  * half, and a half is either a word or two more halves. Water is three looks: More words, then
  * Water, food or toilet, then Water. Yes and No are two.
  */
-export type Group = { id: string; label: string; bn: string; options: [Step, Step] };
+export type Group = { id: string; label: string; bn: string; options: Step[] };
 export type Step = Tile | Group;
 const group = (id: string, label: string, bn: string, a: Step, b: Step): Group => ({ id, label, bn, options: [a, b] });
 export const isGroup = (s: Step): s is Group => "options" in s;
@@ -82,9 +84,9 @@ export const HALF_STEPS: Group = group(
     group("g-rest", "Pain and more", "ব্যথা ও আরও", group("g-ph", "Pain or come here", "ব্যথা বা এখানে আসুন", PAIN, HELP), group("g-ct", "Comfort or thank you", "আরাম বা ধন্যবাদ", COMFORT, THANKS)),
   ),
 );
-/** The group reached by following `path` (group ids) from the top. */
-export function stepAt(path: string[]): Group {
-  let node = HALF_STEPS;
+/** The group reached by following `path` (group ids) from the top of `root`. */
+export function stepAt(path: string[], root: Group = HALF_STEPS): Group {
+  let node = root;
   for (const id of path) {
     const next = node.options.find((o) => o.id === id);
     if (!next || !isGroup(next)) break;

@@ -6,6 +6,7 @@ import { speak } from "@/features/speech/speak";
 import { cn } from "@/lib/cn";
 import { LongBlink, tileBefore } from "./cursor-logic.js";
 import { BOARDS, CONFIRM_TILES, DwellSelector, HALF_STEPS, TileTracker, isGroup, predictGaze, smoothPoint, stepAt, wordsIn } from "./gaze";
+import { applyAct, spellTree, tidy } from "./speller.js";
 import type { BoardSize, GazeModel, Group, Step } from "./gaze";
 import type { Feed } from "./Calibration";
 
@@ -35,6 +36,10 @@ export type BoardMode = "gaze" | "scan";
  *
  * Scan: needs no calibration. A light moves from tile to tile and a slow blink chooses the lit one.
  *
+ * Spell: the same looks and blinks type any message, letter by letter (speller.js). A look opens a
+ * group of letters, the next look picks the letter, and word suggestions finish a word. The message
+ * is spoken, or sent to the caregiver after the same confirmation as any request.
+ *
  * Touch works on every tile in both. Needs (water, toilet…) go through the same confirmation as
  * everywhere in Asha, answered here with two halves of the screen.
  */
@@ -46,9 +51,12 @@ export function Board({
   showDot,
   feed,
   onExit,
+  spell = false,
 }: {
   size: Exclude<BoardSize, 0>;
   mode?: BoardMode;
+  /** Type a message letter by letter instead of choosing whole words. */
+  spell?: boolean;
   model: GazeModel | null;
   dwellMs: number;
   showDot: boolean;
@@ -61,11 +69,17 @@ export function Board({
   const steps = !scan && size === 2;
   const board = BOARDS[scan ? 9 : size];
   const [path, setPath] = useState<string[]>([]);
-  const tiles: Step[] = useMemo(() => (confirming ? CONFIRM_TILES : steps ? stepAt(path).options : board.tiles), [confirming, steps, path, board]);
-  const cols = confirming || steps ? 2 : board.cols;
+  // The message being typed, and the text sent for confirmation (cleared once it goes).
+  const [text, setText] = useState("");
+  const sentText = useRef<string | null>(null);
+  // Groups to open in steps: the halves of the word board, or the letter groups when typing.
+  const tree: Group | null = useMemo(() => (spell ? (spellTree(scan ? 9 : size, text) as Group) : steps ? HALF_STEPS : null), [spell, scan, size, text, steps]);
+  const tiles: Step[] = useMemo(() => (confirming ? CONFIRM_TILES : tree ? stepAt(path, tree).options : board.tiles), [confirming, tree, path, board]);
+  const cols = confirming || steps ? 2 : spell ? 3 : board.cols;
   const crumbs = useMemo(() => {
     const out: string[] = [];
-    let node: Group = HALF_STEPS;
+    if (!tree) return out;
+    let node: Group = tree;
     for (const id of path) {
       const next = node.options.find((o) => o.id === id);
       if (!next || !isGroup(next)) break;
@@ -73,7 +87,7 @@ export function Board({
       node = next;
     }
     return out;
-  }, [path]);
+  }, [path, tree]);
   const grid = useRef<HTMLDivElement>(null);
   const root = useRef<HTMLDivElement>(null);
   const dot = useRef<HTMLDivElement>(null);
@@ -97,9 +111,25 @@ export function Board({
   const choose = useCallback(
     (step: Step) => {
       if (isGroup(step)) return setPath((p) => [...p, step.id]);
+      if (step.act?.kind === "back") return back();
       setPath((p) => (p.length ? [] : p));
       if (step.id === "confirm-yes") return void confirm();
       if (step.id === "confirm-no") return cancel();
+      const act = step.act;
+      if (act) {
+        const message = tidy(text);
+        if (act.kind === "speak") {
+          if (!message) return;
+          setSaid((s) => [message, ...s].slice(0, 6));
+          setSaidOver(delivery);
+          return speak(message);
+        }
+        if (act.kind === "send") {
+          if (message && propose("message", message.slice(0, 250), "eyespeak")) sentText.current = message.slice(0, 250);
+          return;
+        }
+        return setText((t) => applyAct(t, act));
+      }
       setSaid((s) => [step.label, ...s].slice(0, 6));
       if (step.need) propose(step.need, step.say, "eyespeak");
       else {
@@ -107,8 +137,15 @@ export function Board({
         speak(step.say);
       }
     },
-    [confirm, cancel, propose, delivery],
+    [confirm, cancel, propose, delivery, back, text],
   );
+  // A typed message that was confirmed and sent (or recognised on this device) is cleared; one that
+  // was cancelled stays, to change or send again.
+  useEffect(() => {
+    if (pending || sentText.current === null) return;
+    if (delivery.text === sentText.current) setText("");
+    sentText.current = null;
+  }, [pending, delivery]);
   const chooseRef = useRef(choose);
   useEffect(() => {
     chooseRef.current = choose;
@@ -216,6 +253,8 @@ export function Board({
       }
       const b = blink.update(open, t);
       if (scan) {
+        // Closing the eyes for about two seconds goes back out of a group of letters.
+        if (b?.kind === "long" && spell) return back();
         if (b?.kind !== "click") return;
         const at = [...lights].reverse().find((l) => l.at <= b.closedAt);
         if (!at) return; // during the pause after a choice
@@ -229,7 +268,7 @@ export function Board({
         hint = { text: "Your eyes were still moving. Rest them on a tile for a moment, then blink slowly.", until: t + 3000 };
       }
       // Closing the eyes for about two seconds goes back a step.
-      if (b?.kind === "long" && steps) back();
+      if (b?.kind === "long" && (steps || spell)) back();
       if (!model) return;
       if (!f.valid) return lose(t, f.reason);
       const p = predictGaze(model, f.values, { requireValidation: false }) as { valid: boolean; x?: number; y?: number; reason?: string };
@@ -252,7 +291,7 @@ export function Board({
       feed(null);
       if (timer) clearInterval(timer);
     };
-  }, [feed, model, dwell, tiles, scan, steps, stepMs, back]);
+  }, [feed, model, dwell, tiles, scan, steps, spell, stepMs, back]);
 
   useEffect(() => {
     const key = (e: KeyboardEvent) => e.key === "Escape" && onExit();
@@ -260,7 +299,13 @@ export function Board({
     return () => removeEventListener("keydown", key);
   }, [onExit]);
 
-  const startNote = scan
+  const startNote = spell
+    ? scan
+      ? "A light moves over the letters in groups. Blink slowly on a group, then on your letter."
+      : steps
+        ? "Look at a half and hold your gaze, or blink slowly. Each half opens two more until you reach your letter."
+        : "Look at a group of letters, then at your letter. Hold your gaze or blink slowly. Words finish a word in one look."
+    : scan
     ? "A light moves from tile to tile. Blink slowly when it reaches the word you want."
     : steps
       ? "Look at a half and hold your gaze, or blink slowly. Each half opens two more until you reach your word."
@@ -284,16 +329,17 @@ export function Board({
       className="fixed inset-0 z-[60] flex flex-col bg-wash"
       role="dialog"
       aria-modal="true"
-      aria-label={scan ? "Blink to choose" : "Look to choose"}
+      aria-label={spell ? "Type with your eyes" : scan ? "Blink to choose" : "Look to choose"}
       data-testid="gaze-board"
       data-mode={mode}
       data-size={confirming ? 2 : steps ? "steps" : scan ? 9 : size}
+      data-spell={spell || undefined}
     >
       <div className="flex min-h-12 items-center gap-3 px-4 pt-2 text-sm">
         <p role="status" aria-live="polite" className="min-w-0 flex-1 truncate text-ink" data-testid="board-note">
           {note}
         </p>
-        {steps && !confirming && path.length > 0 && (
+        {tree && !confirming && path.length > 0 && (
           <button onClick={back} className="shrink-0 rounded-full px-4 py-2 font-medium text-ink ring-1 ring-line hover:bg-white" data-testid="board-back">
             Back
           </button>
@@ -307,11 +353,22 @@ export function Board({
           {status}
         </p>
       )}
+      {spell && (
+        <div className="mx-[3vmin] mt-2 flex min-h-[11vh] items-center rounded-3xl bg-white px-[3vmin] py-2 ring-1 ring-line" aria-live="polite" aria-label="Your message">
+          <p className="min-w-0 text-[clamp(1.5rem,5.5vmin,3.5rem)] leading-tight font-semibold break-words text-ink" data-testid="spell-text" data-text={text}>
+            {text ? text.toUpperCase() : <span className="font-normal text-muted">Your message appears here</span>}
+            <span aria-hidden="true" className="ml-1 inline-block h-[0.9em] w-[0.08em] animate-pulse bg-brand align-[-0.1em]" />
+          </p>
+        </div>
+      )}
       <div ref={grid} className="grid flex-1 gap-[3vmin] p-[3vmin]" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
         {tiles.map((t, i) => {
           const yes = t.id === "confirm-yes";
           const on = scan && i === lit;
-          const words = isGroup(t) ? wordsIn(t) : [];
+          const words = isGroup(t) ? wordsIn(t).filter((w) => w !== "Back") : [];
+          // Letter groups already say what they hold (A–E); a list helps for words and mixed halves.
+          const list = spell ? !/^[A-Z]–[A-Z]$/.test(t.label) && words.length <= 8 : words.length > 3;
+          const letter = t.label.length === 1;
           return (
             <button
               key={t.id}
@@ -333,9 +390,9 @@ export function Board({
             >
               <span aria-hidden="true" className={cn("absolute inset-x-0 bottom-0 origin-bottom transition-transform duration-100", yes ? "bg-white/30" : "bg-brand/20")} style={{ height: "100%", transform: "scaleY(var(--dwell))" }} />
               <span className="relative px-[2vmin]">
-                <span className="block text-[clamp(1.5rem,5vmin,3.5rem)] leading-tight font-semibold">{t.label}</span>
-                <span className={cn("mt-1 block text-[clamp(1rem,3vmin,1.75rem)]", yes ? "text-white/80" : "text-muted")}>{t.bn}</span>
-                {words.length > 3 && <span className="mt-2 block text-[clamp(0.875rem,2.4vmin,1.25rem)] text-muted">{words.join(" · ")}</span>}
+                <span className={cn("block leading-tight font-semibold", letter ? "text-[clamp(2.5rem,10vmin,6rem)]" : "text-[clamp(1.5rem,5vmin,3.5rem)]")}>{t.label}</span>
+                {t.bn && <span className={cn("mt-1 block text-[clamp(1rem,3vmin,1.75rem)]", yes ? "text-white/80" : "text-muted")}>{t.bn}</span>}
+                {list && words.length > 0 && <span className="mt-2 block text-[clamp(0.875rem,2.4vmin,1.25rem)] text-muted">{words.join(" · ")}</span>}
               </span>
             </button>
           );
