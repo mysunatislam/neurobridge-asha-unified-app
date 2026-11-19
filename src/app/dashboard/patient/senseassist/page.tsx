@@ -9,7 +9,7 @@ import { MicIcon } from "@/components/ui/icons";
 import { askAsha, type InterpretReply } from "@/features/assistant/askAsha";
 import { useActiveModule } from "@/features/perception/PerceptionProvider";
 import { useRequests } from "@/features/requests/RequestProvider";
-import { useSession } from "@/features/session/store";
+import { sessionStore, useSession } from "@/features/session/store";
 import { speak } from "@/features/speech/speak";
 import { useSpeechCapture } from "@/features/speech/useSpeechCapture";
 import { readLocal, saveLocal } from "@/lib/storage";
@@ -123,6 +123,11 @@ export default function SenseAssistPage() {
           ) : (
             <>
               <p className="text-sm text-muted">{result.question}</p>
+              {result.offerCloud && !settings.cloud && (
+                <button onClick={() => sessionStore.updateSettings({ cloud: true })} className="text-sm font-medium text-brand hover:underline">
+                  Turn on cloud assistance, then press Clarify with Asha again
+                </button>
+              )}
               <div className="mt-4 space-y-2" role="radiogroup" aria-label="Possible meanings">
                 {[result.candidate, ...result.alternatives].map((c) => (
                   <label key={c} className={`flex cursor-pointer items-center gap-3 rounded-xl p-4 ring-1 ${chosen === c ? "bg-brand-soft ring-brand" : "ring-line"}`}>

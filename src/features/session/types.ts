@@ -56,5 +56,7 @@ export type Settings = {
   language: "auto" | "en" | "bn" | "mixed";
   speechLanguage: string;
   cloud: boolean;
+  /** Experimental: answer with a small model running in this browser (WebLLM). */
+  deviceAI?: boolean;
   proactive: boolean;
 };

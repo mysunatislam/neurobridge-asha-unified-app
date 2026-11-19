@@ -18,7 +18,12 @@ import { usePatientProfile } from "@/features/session/usePatientProfile";
 import { useSession } from "@/features/session/store";
 import { speak, stopSpeaking } from "@/features/speech/speak";
 import { engineModule } from "@/lib/engine/load";
+import { riskStore } from "@/features/risk/store";
 import { sendRequest } from "./send";
+
+// Health outlook counts needs that never reached anyone. Only the kind and outcome are kept.
+const logOutcome = (p: Pending, outcome: "sent" | "local" | "failed" | "expired") =>
+  riskStore.addRequest({ at: Date.now(), kind: p.kind, outcome, source: p.source });
 
 export type Pending = {
   kind: string;
@@ -148,7 +153,10 @@ export function RequestProvider({ children }: { children: React.ReactNode }) {
       setPending(p);
       setDelivery({ state: "idle" });
       clearTimeout(expiry.current);
-      expiry.current = setTimeout(cancel, 30000);
+      expiry.current = setTimeout(() => {
+        if (current.current === p) logOutcome(p, "expired");
+        cancel();
+      }, 30000);
       speakQuestion(p);
       return true;
     },
@@ -173,6 +181,7 @@ export function RequestProvider({ children }: { children: React.ReactNode }) {
     last.current = t;
     stopSpeaking();
     if (!credential) {
+      logOutcome(p, "local");
       setDelivery({ state: "local", text: p.text });
       speak(
         "I recognised your request on this device. Connect a caregiver to deliver it.",
@@ -182,12 +191,14 @@ export function RequestProvider({ children }: { children: React.ReactNode }) {
     setDelivery({ state: "sending", text: p.text });
     try {
       await sendRequest(credential, p.kind, p.source, p.text, true);
+      logOutcome(p, "sent");
       if (currentCredential.current?.patientId !== credential.patientId) return;
       setDelivery({ state: "sent", text: p.text });
       speak(
         "Your request was sent. I’ll let you know when your caregiver acknowledges it.",
       );
     } catch (e) {
+      logOutcome(p, "failed");
       if (currentCredential.current?.patientId === credential.patientId)
         setDelivery({
           state: "failed",
