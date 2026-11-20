@@ -3,6 +3,14 @@
 import { BlinkCounter } from "./blink-counter.js";
 const median = (a) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)];
 const clamp = (n) => Math.max(0, Math.min(1, n));
+// Turning the head moves the nose tip sideways against the mouth (the nose stands out from the
+// face), which the lateral lip shift reads as a pull. On 1,820 resting faces from GENKI-4K the shift
+// followed sin(yaw) with slope 0.35 (r = 0.94); without this correction 37% of held-out healthy faces
+// read as a one-sided stretch, with it 8% (docs/validation).
+export const LIP_YAW_SHIFT = 0.35;
+const sinDeg = (d) => Math.sin(((Number.isFinite(d) ? d : 0) * Math.PI) / 180);
+export const yawFreeLipShift = (M, lm, dev0, yaw, neutralYaw = 0) =>
+  M.lipDeviation(lm, dev0 || 0) - LIP_YAW_SHIFT * (sinDeg(yaw) - sinDeg(neutralYaw));
 export class FaceAnalysis {
   constructor() {
     this.reset();
@@ -69,7 +77,7 @@ export class FaceAnalysis {
       // Do not learn a held one-sided lip shift as the resting reference.
       // Until a centered reference is available, the same original absolute
       // displacement thresholds remain observable by the sustained-hold watch.
-      Math.abs(M.lipDeviation(lm, 0)) < 0.035 &&
+      Math.abs(yawFreeLipShift(M, lm, 0, f.yaw)) < 0.035 &&
       Math.abs(M.lipAsymmetry(lm, null)) < 0.04;
     let au;
     const browReliable = eye.state === "OPEN" && Math.max(f.eyeBlinkLeft, f.eyeBlinkRight) < 0.25;
@@ -85,7 +93,7 @@ export class FaceAnalysis {
     if (!this.neutral && still && relaxed) {
       this.neutralFrames.push({
         mouthW: M.mouthWidth(lm),
-        dev0: M.lipDeviation(lm, 0),
+        dev0: yawFreeLipShift(M, lm, 0, f.yaw),
         cornerLX: lm[61].x,
         cornerLY: lm[61].y,
         cornerRX: lm[291].x,
@@ -167,7 +175,7 @@ export class FaceAnalysis {
       right: r.smile?.rightIntensity,
       state: r.states?.smile || "Observing",
     };
-    const lateral = M.lipDeviation(lm, n?.dev0 || 0),
+    const lateral = yawFreeLipShift(M, lm, n?.dev0 || 0, f.yaw),
       corner = M.lipAsymmetry(lm, n);
     // Original rule: strongest normalized lateral/corner displacement,
     // 60 seconds on the same side, modest head-pose gate, symmetric smiles excluded.
