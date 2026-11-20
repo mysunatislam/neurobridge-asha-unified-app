@@ -6,6 +6,7 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
   var RAW_LEN = 128, FEATURE_LEN = 201;
+  var POSE_OPEN = 80, POSE_CLOSED = 60;
   var tips = [4, 8, 12, 16, 20];
   var chains = [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16], [17, 18, 19, 20]];
   function sub(a, b) { return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]; }
@@ -113,12 +114,16 @@
   }
   function classifyPose(lm) {
     if (!Array.isArray(lm) || lm.length !== 21) return { name: 'Unclear', openness: [0, 0, 0, 0, 0] };
+    // Public-data validation (docs/validation, HandsDataset + MediaPipe RPS): a folded ring or
+    // little finger reads 30-60 here, so the old closed limit of 30 left a quarter of clear poses
+    // "Other hand pose". 80/60 kept the wrong-pose rate the same on held-out images. Three fingers
+    // is either index-middle-ring or middle-ring-little, which people show about equally often.
     var openness = fingerOpenness(lm), states = openness.slice(1).map(function (v) {
-      return v >= 75 ? 1 : v <= 30 ? 0 : -1;
+      return v >= POSE_OPEN ? 1 : v <= POSE_CLOSED ? 0 : -1;
     });
     var key = states.join('');
     var labels = { '1111': 'Open palm', '0000': 'Closed fingers', '1000': 'Index extended',
-      '1100': 'Two fingers extended', '1110': 'Three fingers extended' };
+      '1100': 'Two fingers extended', '1110': 'Three fingers extended', '0111': 'Three fingers extended' };
     return { name: labels[key] || 'Other hand pose', openness: openness };
   }
   function PoseTracker(holdMs) { this.holdMs = holdMs || 180; this.states = new Map(); }
@@ -193,6 +198,6 @@
 
   return { RAW_LEN: RAW_LEN, FEATURE_LEN: FEATURE_LEN, orderedHands: orderedHands,
     packHands: packHands, upgradeLegacyFrame: upgradeLegacyFrame, buildModelInput: buildModelInput,
-    classifyPose: classifyPose, PoseTracker: PoseTracker,
+    classifyPose: classifyPose, PoseTracker: PoseTracker, POSE_OPEN: POSE_OPEN, POSE_CLOSED: POSE_CLOSED,
     resampleSequence: resampleSequence, inDistribution: inDistribution };
 });

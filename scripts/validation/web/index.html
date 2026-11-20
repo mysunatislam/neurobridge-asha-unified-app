@@ -1,0 +1,38 @@
+<!doctype html><meta charset="utf-8"><body><script type="module">
+const { FaceLandmarker, HandLandmarker, FilesetResolver } = await import("/repo/neuroface/vendor/vision_bundle.mjs");
+const files = await FilesetResolver.forVisionTasks(new URL("/repo/neuroface/vendor/wasm/", location.href).href);
+const make = {};
+window.init = async (kind, mode) => {
+  const key = kind + mode; if (make[key]) return true;
+  const base = { delegate: "CPU", modelAssetPath: kind === "face" ? "/repo/neuroface/models/face_landmarker.task" : "/repo/neuroface/models/hand_landmarker.task" };
+  // Same detector options as public/engine/vision-worker.js
+  const opts = kind === "face"
+    ? { baseOptions: base, runningMode: mode, numFaces: 1, outputFaceBlendshapes: true, outputFacialTransformationMatrixes: true, minFaceDetectionConfidence: 0.6, minTrackingConfidence: 0.6 }
+    : { baseOptions: base, runningMode: mode, numHands: 2, minHandDetectionConfidence: 0.55, minTrackingConfidence: 0.55 };
+  make[key] = await (kind === "face" ? FaceLandmarker : HandLandmarker).createFromOptions(files, opts);
+  return true;
+};
+const load = (src) => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => no(new Error("load " + src)); i.src = src; });
+const r4 = (n) => Math.round(n * 1e5) / 1e5;
+function pack(kind, res, w, h) {
+  if (kind === "face") {
+    const lm = res.faceLandmarks?.[0]; if (!lm) return { w, h, face: false };
+    const bs = {}; for (const c of res.faceBlendshapes?.[0]?.categories || []) bs[c.categoryName] = r4(c.score);
+    return { w, h, face: true, lm: lm.map((p) => [r4(p.x), r4(p.y), r4(p.z)]), bs, mx: res.facialTransformationMatrixes?.[0] ? Array.from(res.facialTransformationMatrixes[0].data).map(r4) : null };
+  }
+  return { w, h, hands: (res.landmarks || []).map((lm, i) => ({ label: res.handednesses?.[i]?.[0]?.categoryName || "", score: r4(res.handednesses?.[i]?.[0]?.score || 0), lm: lm.map((p) => [r4(p.x), r4(p.y), r4(p.z)]) })) };
+}
+window.runImages = async (kind, urls) => {
+  await window.init(kind, "IMAGE"); const m = make[kind + "IMAGE"]; const out = [];
+  for (const u of urls) { try { const img = await load(u); const res = kind === "face" ? m.detect(img) : m.detect(img); out.push(pack(kind, res, img.naturalWidth, img.naturalHeight)); } catch (e) { out.push({ error: String(e) }); } }
+  return out;
+};
+let vid = {};
+window.runVideo = async (kind, urls, times, reset) => {
+  if (reset && make[kind + "VIDEO"]) { make[kind + "VIDEO"].close(); delete make[kind + "VIDEO"]; }
+  await window.init(kind, "VIDEO"); const m = make[kind + "VIDEO"]; const out = [];
+  for (let i = 0; i < urls.length; i++) { const img = await load(urls[i]); const res = kind === "face" ? m.detectForVideo(img, times[i]) : m.detectForVideo(img, times[i]); out.push(pack(kind, res, img.naturalWidth, img.naturalHeight)); }
+  return out;
+};
+window.ready = true;
+</script>
