@@ -1,0 +1,2189 @@
+{
+ "what": "Robustness of the Move counters on held-out Countix VAL clips (same landmarks, perturbed). 1.2.0 = before this change, 1.3.0 = single missed frames no longer reset the repetition.",
+ "detectors_1.2.0": [
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "every clip",
+   "condition": "baseline",
+   "N": 24,
+   "mae": 1.58,
+   "maeCI": [
+    1.21,
+    2.08
+   ],
+   "within1": 0.417,
+   "over": 0,
+   "zero": 0.5,
+   "countedOverTrue": 0.415
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "every clip",
+   "condition": "mirror",
+   "N": 24,
+   "mae": 1.58,
+   "maeCI": [
+    1.21,
+    2.08
+   ],
+   "within1": 0.417,
+   "over": 0,
+   "zero": 0.5,
+   "countedOverTrue": 0.415
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "every clip",
+   "condition": "slow x2",
+   "N": 24,
+   "mae": 1.58,
+   "maeCI": [
+    1.21,
+    2.08
+   ],
+   "within1": 0.417,
+   "over": 0,
+   "zero": 0.5,
+   "countedOverTrue": 0.415
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "every clip",
+   "condition": "slow x3",
+   "N": 24,
+   "mae": 1.54,
+   "maeCI": [
+    1.13,
+    2.04
+   ],
+   "within1": 0.417,
+   "over": 0,
+   "zero": 0.5,
+   "countedOverTrue": 0.431
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "every clip",
+   "condition": "7.5 fps",
+   "N": 24,
+   "mae": 1.67,
+   "maeCI": [
+    1.25,
+    2.17
+   ],
+   "within1": 0.375,
+   "over": 0,
+   "zero": 0.542,
+   "countedOverTrue": 0.385
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "every clip",
+   "condition": "jitter 0.5%",
+   "N": 24,
+   "mae": 1.58,
+   "maeCI": [
+    1.21,
+    2.08
+   ],
+   "within1": 0.417,
+   "over": 0,
+   "zero": 0.5,
+   "countedOverTrue": 0.415
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "every clip",
+   "condition": "jitter 1%",
+   "N": 24,
+   "mae": 1.67,
+   "maeCI": [
+    1.29,
+    2.13
+   ],
+   "within1": 0.375,
+   "over": 0,
+   "zero": 0.542,
+   "countedOverTrue": 0.385
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "every clip",
+   "condition": "10% dropouts",
+   "N": 24,
+   "mae": 2.63,
+   "maeCI": [
+    2.21,
+    3.17
+   ],
+   "within1": 0.042,
+   "over": 0,
+   "zero": 0.917,
+   "countedOverTrue": 0.031
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "body in view",
+   "condition": "baseline",
+   "N": 11,
+   "mae": 0.82,
+   "maeCI": [
+    0.36,
+    1.27
+   ],
+   "within1": 0.818,
+   "over": 0,
+   "zero": 0,
+   "countedOverTrue": 0.743
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "body in view",
+   "condition": "mirror",
+   "N": 11,
+   "mae": 0.82,
+   "maeCI": [
+    0.36,
+    1.27
+   ],
+   "within1": 0.818,
+   "over": 0,
+   "zero": 0,
+   "countedOverTrue": 0.743
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "body in view",
+   "condition": "slow x2",
+   "N": 11,
+   "mae": 0.82,
+   "maeCI": [
+    0.36,
+    1.27
+   ],
+   "within1": 0.818,
+   "over": 0,
+   "zero": 0,
+   "countedOverTrue": 0.743
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "body in view",
+   "condition": "slow x3",
+   "N": 11,
+   "mae": 0.82,
+   "maeCI": [
+    0.36,
+    1.27
+   ],
+   "within1": 0.818,
+   "over": 0,
+   "zero": 0,
+   "countedOverTrue": 0.743
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "body in view",
+   "condition": "7.5 fps",
+   "N": 11,
+   "mae": 0.91,
+   "maeCI": [
+    0.45,
+    1.55
+   ],
+   "within1": 0.818,
+   "over": 0,
+   "zero": 0,
+   "countedOverTrue": 0.714
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "body in view",
+   "condition": "jitter 0.5%",
+   "N": 11,
+   "mae": 0.82,
+   "maeCI": [
+    0.36,
+    1.27
+   ],
+   "within1": 0.818,
+   "over": 0,
+   "zero": 0,
+   "countedOverTrue": 0.743
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "body in view",
+   "condition": "jitter 1%",
+   "N": 11,
+   "mae": 1.36,
+   "maeCI": [
+    1,
+    1.73
+   ],
+   "within1": 0.545,
+   "over": 0,
+   "zero": 0.091,
+   "countedOverTrue": 0.571
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "body in view",
+   "condition": "10% dropouts",
+   "N": 11,
+   "mae": 2.73,
+   "maeCI": [
+    1.91,
+    3.73
+   ],
+   "within1": 0.182,
+   "over": 0,
+   "zero": 0.545,
+   "countedOverTrue": 0.143
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "every clip",
+   "condition": "baseline",
+   "N": 32,
+   "mae": 2.34,
+   "maeCI": [
+    1.59,
+    3.09
+   ],
+   "within1": 0.531,
+   "over": 0,
+   "zero": 0.281,
+   "countedOverTrue": 0.364
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "every clip",
+   "condition": "mirror",
+   "N": 32,
+   "mae": 2.34,
+   "maeCI": [
+    1.59,
+    3.09
+   ],
+   "within1": 0.531,
+   "over": 0,
+   "zero": 0.281,
+   "countedOverTrue": 0.364
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "every clip",
+   "condition": "slow x2",
+   "N": 32,
+   "mae": 2.09,
+   "maeCI": [
+    1.44,
+    2.84
+   ],
+   "within1": 0.531,
+   "over": 0.031,
+   "zero": 0.25,
+   "countedOverTrue": 0.449
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "every clip",
+   "condition": "slow x3",
+   "N": 32,
+   "mae": 2,
+   "maeCI": [
+    1.41,
+    2.72
+   ],
+   "within1": 0.563,
+   "over": 0.094,
+   "zero": 0.25,
+   "countedOverTrue": 0.508
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "every clip",
+   "condition": "7.5 fps",
+   "N": 32,
+   "mae": 2.72,
+   "maeCI": [
+    1.91,
+    3.5
+   ],
+   "within1": 0.406,
+   "over": 0,
+   "zero": 0.344,
+   "countedOverTrue": 0.263
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "every clip",
+   "condition": "jitter 0.5%",
+   "N": 32,
+   "mae": 2.44,
+   "maeCI": [
+    1.66,
+    3.19
+   ],
+   "within1": 0.5,
+   "over": 0,
+   "zero": 0.281,
+   "countedOverTrue": 0.339
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "every clip",
+   "condition": "jitter 1%",
+   "N": 32,
+   "mae": 2.47,
+   "maeCI": [
+    1.69,
+    3.28
+   ],
+   "within1": 0.438,
+   "over": 0,
+   "zero": 0.25,
+   "countedOverTrue": 0.331
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "every clip",
+   "condition": "10% dropouts",
+   "N": 32,
+   "mae": 3.59,
+   "maeCI": [
+    2.97,
+    4.25
+   ],
+   "within1": 0,
+   "over": 0,
+   "zero": 0.906,
+   "countedOverTrue": 0.025
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "body in view",
+   "condition": "baseline",
+   "N": 21,
+   "mae": 1.9,
+   "maeCI": [
+    1.14,
+    2.81
+   ],
+   "within1": 0.714,
+   "over": 0,
+   "zero": 0.095,
+   "countedOverTrue": 0.487
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "body in view",
+   "condition": "mirror",
+   "N": 21,
+   "mae": 1.9,
+   "maeCI": [
+    1.14,
+    2.81
+   ],
+   "within1": 0.714,
+   "over": 0,
+   "zero": 0.095,
+   "countedOverTrue": 0.487
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "body in view",
+   "condition": "slow x2",
+   "N": 21,
+   "mae": 1.67,
+   "maeCI": [
+    1.05,
+    2.43
+   ],
+   "within1": 0.714,
+   "over": 0.048,
+   "zero": 0.095,
+   "countedOverTrue": 0.577
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "body in view",
+   "condition": "slow x3",
+   "N": 21,
+   "mae": 1.62,
+   "maeCI": [
+    1,
+    2.33
+   ],
+   "within1": 0.714,
+   "over": 0.143,
+   "zero": 0.095,
+   "countedOverTrue": 0.641
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "body in view",
+   "condition": "7.5 fps",
+   "N": 21,
+   "mae": 2.43,
+   "maeCI": [
+    1.57,
+    3.43
+   ],
+   "within1": 0.524,
+   "over": 0,
+   "zero": 0.19,
+   "countedOverTrue": 0.346
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "body in view",
+   "condition": "jitter 0.5%",
+   "N": 21,
+   "mae": 1.86,
+   "maeCI": [
+    1.14,
+    2.67
+   ],
+   "within1": 0.667,
+   "over": 0,
+   "zero": 0.095,
+   "countedOverTrue": 0.5
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "body in view",
+   "condition": "jitter 1%",
+   "N": 21,
+   "mae": 2.05,
+   "maeCI": [
+    1.29,
+    2.95
+   ],
+   "within1": 0.571,
+   "over": 0,
+   "zero": 0.095,
+   "countedOverTrue": 0.449
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "body in view",
+   "condition": "10% dropouts",
+   "N": 21,
+   "mae": 3.57,
+   "maeCI": [
+    2.86,
+    4.48
+   ],
+   "within1": 0,
+   "over": 0,
+   "zero": 0.857,
+   "countedOverTrue": 0.038
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "every clip",
+   "condition": "baseline",
+   "N": 39,
+   "mae": 1.62,
+   "maeCI": [
+    1.1,
+    2.28
+   ],
+   "within1": 0.615,
+   "over": 0,
+   "zero": 0.282,
+   "countedOverTrue": 0.479
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "every clip",
+   "condition": "mirror",
+   "N": 39,
+   "mae": 1.62,
+   "maeCI": [
+    1.1,
+    2.28
+   ],
+   "within1": 0.615,
+   "over": 0,
+   "zero": 0.282,
+   "countedOverTrue": 0.479
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "every clip",
+   "condition": "slow x2",
+   "N": 39,
+   "mae": 1.49,
+   "maeCI": [
+    0.95,
+    2.15
+   ],
+   "within1": 0.692,
+   "over": 0,
+   "zero": 0.256,
+   "countedOverTrue": 0.521
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "every clip",
+   "condition": "slow x3",
+   "N": 39,
+   "mae": 1.49,
+   "maeCI": [
+    0.95,
+    2.15
+   ],
+   "within1": 0.692,
+   "over": 0,
+   "zero": 0.256,
+   "countedOverTrue": 0.521
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "every clip",
+   "condition": "7.5 fps",
+   "N": 39,
+   "mae": 1.87,
+   "maeCI": [
+    1.33,
+    2.54
+   ],
+   "within1": 0.487,
+   "over": 0,
+   "zero": 0.308,
+   "countedOverTrue": 0.397
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "every clip",
+   "condition": "jitter 0.5%",
+   "N": 39,
+   "mae": 1.64,
+   "maeCI": [
+    1.13,
+    2.31
+   ],
+   "within1": 0.59,
+   "over": 0,
+   "zero": 0.282,
+   "countedOverTrue": 0.471
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "every clip",
+   "condition": "jitter 1%",
+   "N": 39,
+   "mae": 1.64,
+   "maeCI": [
+    1.13,
+    2.31
+   ],
+   "within1": 0.59,
+   "over": 0,
+   "zero": 0.308,
+   "countedOverTrue": 0.471
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "every clip",
+   "condition": "10% dropouts",
+   "N": 39,
+   "mae": 2.92,
+   "maeCI": [
+    2.46,
+    3.49
+   ],
+   "within1": 0.026,
+   "over": 0,
+   "zero": 0.821,
+   "countedOverTrue": 0.058
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "body in view",
+   "condition": "baseline",
+   "N": 20,
+   "mae": 1.35,
+   "maeCI": [
+    0.65,
+    2.4
+   ],
+   "within1": 0.7,
+   "over": 0,
+   "zero": 0.15,
+   "countedOverTrue": 0.609
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "body in view",
+   "condition": "mirror",
+   "N": 20,
+   "mae": 1.35,
+   "maeCI": [
+    0.65,
+    2.4
+   ],
+   "within1": 0.7,
+   "over": 0,
+   "zero": 0.15,
+   "countedOverTrue": 0.609
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "body in view",
+   "condition": "slow x2",
+   "N": 20,
+   "mae": 1.1,
+   "maeCI": [
+    0.4,
+    2.2
+   ],
+   "within1": 0.85,
+   "over": 0,
+   "zero": 0.1,
+   "countedOverTrue": 0.681
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "body in view",
+   "condition": "slow x3",
+   "N": 20,
+   "mae": 1.1,
+   "maeCI": [
+    0.4,
+    2.2
+   ],
+   "within1": 0.85,
+   "over": 0,
+   "zero": 0.1,
+   "countedOverTrue": 0.681
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "body in view",
+   "condition": "7.5 fps",
+   "N": 20,
+   "mae": 1.8,
+   "maeCI": [
+    1.05,
+    2.85
+   ],
+   "within1": 0.5,
+   "over": 0,
+   "zero": 0.2,
+   "countedOverTrue": 0.478
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "body in view",
+   "condition": "jitter 0.5%",
+   "N": 20,
+   "mae": 1.25,
+   "maeCI": [
+    0.55,
+    2.3
+   ],
+   "within1": 0.8,
+   "over": 0,
+   "zero": 0.1,
+   "countedOverTrue": 0.638
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "body in view",
+   "condition": "jitter 1%",
+   "N": 20,
+   "mae": 1.3,
+   "maeCI": [
+    0.6,
+    2.35
+   ],
+   "within1": 0.75,
+   "over": 0,
+   "zero": 0.1,
+   "countedOverTrue": 0.623
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "body in view",
+   "condition": "10% dropouts",
+   "N": 20,
+   "mae": 3.4,
+   "maeCI": [
+    2.65,
+    4.3
+   ],
+   "within1": 0,
+   "over": 0,
+   "zero": 0.95,
+   "countedOverTrue": 0.014
+  }
+ ],
+ "detectors_1.3.0": [
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "every clip",
+   "condition": "baseline",
+   "N": 24,
+   "mae": 1.54,
+   "maeCI": [
+    1.17,
+    2.04
+   ],
+   "within1": 0.458,
+   "over": 0,
+   "zero": 0.458,
+   "countedOverTrue": 0.431
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "every clip",
+   "condition": "mirror",
+   "N": 24,
+   "mae": 1.54,
+   "maeCI": [
+    1.17,
+    2.04
+   ],
+   "within1": 0.458,
+   "over": 0,
+   "zero": 0.458,
+   "countedOverTrue": 0.431
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "every clip",
+   "condition": "slow x2",
+   "N": 24,
+   "mae": 1.54,
+   "maeCI": [
+    1.17,
+    2.04
+   ],
+   "within1": 0.458,
+   "over": 0,
+   "zero": 0.458,
+   "countedOverTrue": 0.431
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "every clip",
+   "condition": "slow x3",
+   "N": 24,
+   "mae": 1.54,
+   "maeCI": [
+    1.13,
+    2.04
+   ],
+   "within1": 0.417,
+   "over": 0,
+   "zero": 0.5,
+   "countedOverTrue": 0.431
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "every clip",
+   "condition": "7.5 fps",
+   "N": 24,
+   "mae": 1.63,
+   "maeCI": [
+    1.21,
+    2.13
+   ],
+   "within1": 0.417,
+   "over": 0,
+   "zero": 0.5,
+   "countedOverTrue": 0.4
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "every clip",
+   "condition": "jitter 0.5%",
+   "N": 24,
+   "mae": 1.54,
+   "maeCI": [
+    1.17,
+    2.04
+   ],
+   "within1": 0.458,
+   "over": 0,
+   "zero": 0.458,
+   "countedOverTrue": 0.431
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "every clip",
+   "condition": "jitter 1%",
+   "N": 24,
+   "mae": 1.63,
+   "maeCI": [
+    1.25,
+    2.08
+   ],
+   "within1": 0.417,
+   "over": 0,
+   "zero": 0.5,
+   "countedOverTrue": 0.4
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "every clip",
+   "condition": "10% dropouts",
+   "N": 24,
+   "mae": 1.58,
+   "maeCI": [
+    1.21,
+    2.08
+   ],
+   "within1": 0.417,
+   "over": 0,
+   "zero": 0.5,
+   "countedOverTrue": 0.415
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "body in view",
+   "condition": "baseline",
+   "N": 11,
+   "mae": 0.82,
+   "maeCI": [
+    0.36,
+    1.27
+   ],
+   "within1": 0.818,
+   "over": 0,
+   "zero": 0,
+   "countedOverTrue": 0.743
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "body in view",
+   "condition": "mirror",
+   "N": 11,
+   "mae": 0.82,
+   "maeCI": [
+    0.36,
+    1.27
+   ],
+   "within1": 0.818,
+   "over": 0,
+   "zero": 0,
+   "countedOverTrue": 0.743
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "body in view",
+   "condition": "slow x2",
+   "N": 11,
+   "mae": 0.82,
+   "maeCI": [
+    0.36,
+    1.27
+   ],
+   "within1": 0.818,
+   "over": 0,
+   "zero": 0,
+   "countedOverTrue": 0.743
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "body in view",
+   "condition": "slow x3",
+   "N": 11,
+   "mae": 0.82,
+   "maeCI": [
+    0.36,
+    1.27
+   ],
+   "within1": 0.818,
+   "over": 0,
+   "zero": 0,
+   "countedOverTrue": 0.743
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "body in view",
+   "condition": "7.5 fps",
+   "N": 11,
+   "mae": 0.91,
+   "maeCI": [
+    0.45,
+    1.55
+   ],
+   "within1": 0.818,
+   "over": 0,
+   "zero": 0,
+   "countedOverTrue": 0.714
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "body in view",
+   "condition": "jitter 0.5%",
+   "N": 11,
+   "mae": 0.82,
+   "maeCI": [
+    0.36,
+    1.27
+   ],
+   "within1": 0.818,
+   "over": 0,
+   "zero": 0,
+   "countedOverTrue": 0.743
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "body in view",
+   "condition": "jitter 1%",
+   "N": 11,
+   "mae": 1.36,
+   "maeCI": [
+    1,
+    1.73
+   ],
+   "within1": 0.545,
+   "over": 0,
+   "zero": 0.091,
+   "countedOverTrue": 0.571
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "subset": "body in view",
+   "condition": "10% dropouts",
+   "N": 11,
+   "mae": 0.82,
+   "maeCI": [
+    0.36,
+    1.27
+   ],
+   "within1": 0.818,
+   "over": 0,
+   "zero": 0,
+   "countedOverTrue": 0.743
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "every clip",
+   "condition": "baseline",
+   "N": 32,
+   "mae": 2.34,
+   "maeCI": [
+    1.59,
+    3.09
+   ],
+   "within1": 0.531,
+   "over": 0,
+   "zero": 0.281,
+   "countedOverTrue": 0.364
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "every clip",
+   "condition": "mirror",
+   "N": 32,
+   "mae": 2.34,
+   "maeCI": [
+    1.59,
+    3.09
+   ],
+   "within1": 0.531,
+   "over": 0,
+   "zero": 0.281,
+   "countedOverTrue": 0.364
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "every clip",
+   "condition": "slow x2",
+   "N": 32,
+   "mae": 2.09,
+   "maeCI": [
+    1.44,
+    2.84
+   ],
+   "within1": 0.531,
+   "over": 0.031,
+   "zero": 0.25,
+   "countedOverTrue": 0.449
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "every clip",
+   "condition": "slow x3",
+   "N": 32,
+   "mae": 1.97,
+   "maeCI": [
+    1.38,
+    2.69
+   ],
+   "within1": 0.563,
+   "over": 0.094,
+   "zero": 0.219,
+   "countedOverTrue": 0.517
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "every clip",
+   "condition": "7.5 fps",
+   "N": 32,
+   "mae": 2.72,
+   "maeCI": [
+    1.91,
+    3.5
+   ],
+   "within1": 0.406,
+   "over": 0,
+   "zero": 0.344,
+   "countedOverTrue": 0.263
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "every clip",
+   "condition": "jitter 0.5%",
+   "N": 32,
+   "mae": 2.44,
+   "maeCI": [
+    1.66,
+    3.19
+   ],
+   "within1": 0.5,
+   "over": 0,
+   "zero": 0.281,
+   "countedOverTrue": 0.339
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "every clip",
+   "condition": "jitter 1%",
+   "N": 32,
+   "mae": 2.44,
+   "maeCI": [
+    1.66,
+    3.25
+   ],
+   "within1": 0.469,
+   "over": 0,
+   "zero": 0.25,
+   "countedOverTrue": 0.339
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "every clip",
+   "condition": "10% dropouts",
+   "N": 32,
+   "mae": 2.41,
+   "maeCI": [
+    1.69,
+    3.13
+   ],
+   "within1": 0.5,
+   "over": 0,
+   "zero": 0.281,
+   "countedOverTrue": 0.347
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "body in view",
+   "condition": "baseline",
+   "N": 21,
+   "mae": 1.9,
+   "maeCI": [
+    1.14,
+    2.81
+   ],
+   "within1": 0.714,
+   "over": 0,
+   "zero": 0.095,
+   "countedOverTrue": 0.487
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "body in view",
+   "condition": "mirror",
+   "N": 21,
+   "mae": 1.9,
+   "maeCI": [
+    1.14,
+    2.81
+   ],
+   "within1": 0.714,
+   "over": 0,
+   "zero": 0.095,
+   "countedOverTrue": 0.487
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "body in view",
+   "condition": "slow x2",
+   "N": 21,
+   "mae": 1.67,
+   "maeCI": [
+    1.05,
+    2.43
+   ],
+   "within1": 0.714,
+   "over": 0.048,
+   "zero": 0.095,
+   "countedOverTrue": 0.577
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "body in view",
+   "condition": "slow x3",
+   "N": 21,
+   "mae": 1.62,
+   "maeCI": [
+    1,
+    2.33
+   ],
+   "within1": 0.714,
+   "over": 0.143,
+   "zero": 0.095,
+   "countedOverTrue": 0.641
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "body in view",
+   "condition": "7.5 fps",
+   "N": 21,
+   "mae": 2.43,
+   "maeCI": [
+    1.57,
+    3.43
+   ],
+   "within1": 0.524,
+   "over": 0,
+   "zero": 0.19,
+   "countedOverTrue": 0.346
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "body in view",
+   "condition": "jitter 0.5%",
+   "N": 21,
+   "mae": 1.81,
+   "maeCI": [
+    1.1,
+    2.62
+   ],
+   "within1": 0.714,
+   "over": 0,
+   "zero": 0.095,
+   "countedOverTrue": 0.513
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "body in view",
+   "condition": "jitter 1%",
+   "N": 21,
+   "mae": 2,
+   "maeCI": [
+    1.19,
+    2.9
+   ],
+   "within1": 0.619,
+   "over": 0,
+   "zero": 0.095,
+   "countedOverTrue": 0.462
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "subset": "body in view",
+   "condition": "10% dropouts",
+   "N": 21,
+   "mae": 2.05,
+   "maeCI": [
+    1.19,
+    3.05
+   ],
+   "within1": 0.667,
+   "over": 0,
+   "zero": 0.095,
+   "countedOverTrue": 0.449
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "every clip",
+   "condition": "baseline",
+   "N": 39,
+   "mae": 1.46,
+   "maeCI": [
+    1,
+    2.08
+   ],
+   "within1": 0.641,
+   "over": 0,
+   "zero": 0.205,
+   "countedOverTrue": 0.529
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "every clip",
+   "condition": "mirror",
+   "N": 39,
+   "mae": 1.46,
+   "maeCI": [
+    1,
+    2.08
+   ],
+   "within1": 0.641,
+   "over": 0,
+   "zero": 0.205,
+   "countedOverTrue": 0.529
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "every clip",
+   "condition": "slow x2",
+   "N": 39,
+   "mae": 1.38,
+   "maeCI": [
+    0.87,
+    2.03
+   ],
+   "within1": 0.718,
+   "over": 0,
+   "zero": 0.179,
+   "countedOverTrue": 0.554
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "every clip",
+   "condition": "slow x3",
+   "N": 39,
+   "mae": 1.38,
+   "maeCI": [
+    0.87,
+    2.03
+   ],
+   "within1": 0.718,
+   "over": 0,
+   "zero": 0.179,
+   "countedOverTrue": 0.554
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "every clip",
+   "condition": "7.5 fps",
+   "N": 39,
+   "mae": 1.79,
+   "maeCI": [
+    1.28,
+    2.44
+   ],
+   "within1": 0.487,
+   "over": 0,
+   "zero": 0.256,
+   "countedOverTrue": 0.421
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "every clip",
+   "condition": "jitter 0.5%",
+   "N": 39,
+   "mae": 1.46,
+   "maeCI": [
+    1,
+    2.08
+   ],
+   "within1": 0.641,
+   "over": 0,
+   "zero": 0.205,
+   "countedOverTrue": 0.529
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "every clip",
+   "condition": "jitter 1%",
+   "N": 39,
+   "mae": 1.44,
+   "maeCI": [
+    0.97,
+    2.05
+   ],
+   "within1": 0.667,
+   "over": 0,
+   "zero": 0.205,
+   "countedOverTrue": 0.537
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "every clip",
+   "condition": "10% dropouts",
+   "N": 39,
+   "mae": 1.49,
+   "maeCI": [
+    1,
+    2.13
+   ],
+   "within1": 0.641,
+   "over": 0,
+   "zero": 0.205,
+   "countedOverTrue": 0.521
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "body in view",
+   "condition": "baseline",
+   "N": 20,
+   "mae": 1.35,
+   "maeCI": [
+    0.65,
+    2.4
+   ],
+   "within1": 0.7,
+   "over": 0,
+   "zero": 0.15,
+   "countedOverTrue": 0.609
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "body in view",
+   "condition": "mirror",
+   "N": 20,
+   "mae": 1.35,
+   "maeCI": [
+    0.65,
+    2.4
+   ],
+   "within1": 0.7,
+   "over": 0,
+   "zero": 0.15,
+   "countedOverTrue": 0.609
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "body in view",
+   "condition": "slow x2",
+   "N": 20,
+   "mae": 1.1,
+   "maeCI": [
+    0.4,
+    2.2
+   ],
+   "within1": 0.85,
+   "over": 0,
+   "zero": 0.1,
+   "countedOverTrue": 0.681
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "body in view",
+   "condition": "slow x3",
+   "N": 20,
+   "mae": 1.1,
+   "maeCI": [
+    0.4,
+    2.2
+   ],
+   "within1": 0.85,
+   "over": 0,
+   "zero": 0.1,
+   "countedOverTrue": 0.681
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "body in view",
+   "condition": "7.5 fps",
+   "N": 20,
+   "mae": 1.75,
+   "maeCI": [
+    1,
+    2.8
+   ],
+   "within1": 0.5,
+   "over": 0,
+   "zero": 0.2,
+   "countedOverTrue": 0.493
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "body in view",
+   "condition": "jitter 0.5%",
+   "N": 20,
+   "mae": 1.2,
+   "maeCI": [
+    0.5,
+    2.25
+   ],
+   "within1": 0.85,
+   "over": 0,
+   "zero": 0.1,
+   "countedOverTrue": 0.652
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "body in view",
+   "condition": "jitter 1%",
+   "N": 20,
+   "mae": 1.25,
+   "maeCI": [
+    0.55,
+    2.3
+   ],
+   "within1": 0.8,
+   "over": 0,
+   "zero": 0.1,
+   "countedOverTrue": 0.638
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "subset": "body in view",
+   "condition": "10% dropouts",
+   "N": 20,
+   "mae": 1.35,
+   "maeCI": [
+    0.65,
+    2.4
+   ],
+   "within1": 0.7,
+   "over": 0,
+   "zero": 0.15,
+   "countedOverTrue": 0.609
+  }
+ ],
+ "heldout_1.3.0_vs_1.0": {
+  "rep": [
+   {
+    "cls": "squat",
+    "ex": "squat",
+    "split": "val",
+    "subset": "every clip",
+    "before": {
+     "N": 24,
+     "mae": 2,
+     "exact": 0.042,
+     "within1": 0.167,
+     "zero": 0.667,
+     "over": 0,
+     "countedOverTrue": 0.262,
+     "maeCI": [
+      1.67,
+      2.38
+     ]
+    },
+    "after": {
+     "N": 24,
+     "mae": 1.54,
+     "exact": 0.167,
+     "within1": 0.458,
+     "zero": 0.458,
+     "over": 0,
+     "countedOverTrue": 0.431,
+     "maeCI": [
+      1.17,
+      2.04
+     ]
+    }
+   },
+   {
+    "cls": "squat",
+    "ex": "squat",
+    "split": "val",
+    "subset": "body in view ≥90% of frames",
+    "before": {
+     "N": 11,
+     "mae": 1.64,
+     "exact": 0.091,
+     "within1": 0.364,
+     "zero": 0.273,
+     "over": 0,
+     "countedOverTrue": 0.486,
+     "maeCI": [
+      1.18,
+      2.09
+     ]
+    },
+    "after": {
+     "N": 11,
+     "mae": 0.82,
+     "exact": 0.364,
+     "within1": 0.818,
+     "zero": 0,
+     "over": 0,
+     "countedOverTrue": 0.743,
+     "maeCI": [
+      0.36,
+      1.27
+     ]
+    }
+   },
+   {
+    "cls": "squat",
+    "ex": "squat",
+    "split": "all",
+    "subset": "every clip",
+    "before": {
+     "N": 90,
+     "mae": 2.3,
+     "exact": 0.033,
+     "within1": 0.178,
+     "zero": 0.7,
+     "over": 0,
+     "countedOverTrue": 0.169,
+     "maeCI": [
+      2.04,
+      2.57
+     ]
+    },
+    "after": {
+     "N": 90,
+     "mae": 1.92,
+     "exact": 0.078,
+     "within1": 0.422,
+     "zero": 0.489,
+     "over": 0,
+     "countedOverTrue": 0.305,
+     "maeCI": [
+      1.64,
+      2.21
+     ]
+    }
+   },
+   {
+    "cls": "squat",
+    "ex": "squat",
+    "split": "all",
+    "subset": "body in view ≥90% of frames",
+    "before": {
+     "N": 43,
+     "mae": 2.14,
+     "exact": 0.07,
+     "within1": 0.302,
+     "zero": 0.512,
+     "over": 0,
+     "countedOverTrue": 0.276,
+     "maeCI": [
+      1.7,
+      2.58
+     ]
+    },
+    "after": {
+     "N": 43,
+     "mae": 1.49,
+     "exact": 0.163,
+     "within1": 0.721,
+     "zero": 0.186,
+     "over": 0,
+     "countedOverTrue": 0.496,
+     "maeCI": [
+      1.05,
+      1.95
+     ]
+    }
+   },
+   {
+    "cls": "push_up",
+    "ex": "wall_pushup",
+    "split": "val",
+    "subset": "every clip",
+    "before": {
+     "N": 32,
+     "mae": 2.75,
+     "exact": 0.031,
+     "within1": 0.438,
+     "zero": 0.375,
+     "over": 0,
+     "countedOverTrue": 0.254,
+     "maeCI": [
+      1.97,
+      3.5
+     ]
+    },
+    "after": {
+     "N": 32,
+     "mae": 2.34,
+     "exact": 0.125,
+     "within1": 0.531,
+     "zero": 0.281,
+     "over": 0,
+     "countedOverTrue": 0.364,
+     "maeCI": [
+      1.59,
+      3.09
+     ]
+    }
+   },
+   {
+    "cls": "push_up",
+    "ex": "wall_pushup",
+    "split": "val",
+    "subset": "body in view ≥90% of frames",
+    "before": {
+     "N": 21,
+     "mae": 2.43,
+     "exact": 0.048,
+     "within1": 0.571,
+     "zero": 0.19,
+     "over": 0,
+     "countedOverTrue": 0.346,
+     "maeCI": [
+      1.57,
+      3.38
+     ]
+    },
+    "after": {
+     "N": 21,
+     "mae": 1.9,
+     "exact": 0.143,
+     "within1": 0.714,
+     "zero": 0.095,
+     "over": 0,
+     "countedOverTrue": 0.487,
+     "maeCI": [
+      1.14,
+      2.81
+     ]
+    }
+   },
+   {
+    "cls": "push_up",
+    "ex": "wall_pushup",
+    "split": "all",
+    "subset": "every clip",
+    "before": {
+     "N": 145,
+     "mae": 3.02,
+     "exact": 0.048,
+     "within1": 0.297,
+     "zero": 0.476,
+     "over": 0.007,
+     "countedOverTrue": 0.234,
+     "maeCI": [
+      2.68,
+      3.41
+     ]
+    },
+    "after": {
+     "N": 145,
+     "mae": 2.46,
+     "exact": 0.124,
+     "within1": 0.434,
+     "zero": 0.276,
+     "over": 0.007,
+     "countedOverTrue": 0.378,
+     "maeCI": [
+      2.14,
+      2.83
+     ]
+    }
+   },
+   {
+    "cls": "push_up",
+    "ex": "wall_pushup",
+    "split": "all",
+    "subset": "body in view ≥90% of frames",
+    "before": {
+     "N": 101,
+     "mae": 2.87,
+     "exact": 0.069,
+     "within1": 0.366,
+     "zero": 0.356,
+     "over": 0.01,
+     "countedOverTrue": 0.294,
+     "maeCI": [
+      2.51,
+      3.35
+     ]
+    },
+    "after": {
+     "N": 101,
+     "mae": 2.19,
+     "exact": 0.158,
+     "within1": 0.515,
+     "zero": 0.158,
+     "over": 0.01,
+     "countedOverTrue": 0.463,
+     "maeCI": [
+      1.86,
+      2.6
+     ]
+    }
+   },
+   {
+    "cls": "front_raises",
+    "ex": "arm_raise",
+    "split": "val",
+    "subset": "every clip",
+    "before": {
+     "N": 39,
+     "mae": 1.77,
+     "exact": 0.205,
+     "within1": 0.564,
+     "zero": 0.333,
+     "over": 0,
+     "countedOverTrue": 0.43,
+     "maeCI": [
+      1.23,
+      2.44
+     ]
+    },
+    "after": {
+     "N": 39,
+     "mae": 1.46,
+     "exact": 0.231,
+     "within1": 0.641,
+     "zero": 0.205,
+     "over": 0,
+     "countedOverTrue": 0.529,
+     "maeCI": [
+      1,
+      2.08
+     ]
+    }
+   },
+   {
+    "cls": "front_raises",
+    "ex": "arm_raise",
+    "split": "val",
+    "subset": "body in view ≥90% of frames",
+    "before": {
+     "N": 20,
+     "mae": 1.6,
+     "exact": 0.3,
+     "within1": 0.65,
+     "zero": 0.2,
+     "over": 0,
+     "countedOverTrue": 0.536,
+     "maeCI": [
+      0.8,
+      2.7
+     ]
+    },
+    "after": {
+     "N": 20,
+     "mae": 1.35,
+     "exact": 0.35,
+     "within1": 0.7,
+     "zero": 0.15,
+     "over": 0,
+     "countedOverTrue": 0.609,
+     "maeCI": [
+      0.65,
+      2.4
+     ]
+    }
+   },
+   {
+    "cls": "front_raises",
+    "ex": "arm_raise",
+    "split": "all",
+    "subset": "every clip",
+    "before": {
+     "N": 161,
+     "mae": 2.21,
+     "exact": 0.174,
+     "within1": 0.484,
+     "zero": 0.348,
+     "over": 0,
+     "countedOverTrue": 0.398,
+     "maeCI": [
+      1.92,
+      2.53
+     ]
+    },
+    "after": {
+     "N": 161,
+     "mae": 1.97,
+     "exact": 0.193,
+     "within1": 0.528,
+     "zero": 0.248,
+     "over": 0,
+     "countedOverTrue": 0.464,
+     "maeCI": [
+      1.71,
+      2.26
+     ]
+    }
+   },
+   {
+    "cls": "front_raises",
+    "ex": "arm_raise",
+    "split": "all",
+    "subset": "body in view ≥90% of frames",
+    "before": {
+     "N": 113,
+     "mae": 1.94,
+     "exact": 0.212,
+     "within1": 0.549,
+     "zero": 0.274,
+     "over": 0,
+     "countedOverTrue": 0.482,
+     "maeCI": [
+      1.62,
+      2.36
+     ]
+    },
+    "after": {
+     "N": 113,
+     "mae": 1.74,
+     "exact": 0.23,
+     "within1": 0.584,
+     "zero": 0.195,
+     "over": 0,
+     "countedOverTrue": 0.534,
+     "maeCI": [
+      1.44,
+      2.13
+     ]
+    }
+   },
+   {
+    "cls": "lunge",
+    "ex": "squat",
+    "split": "val",
+    "subset": "every clip",
+    "before": {
+     "N": 37,
+     "mae": 2.59,
+     "exact": 0.081,
+     "within1": 0.216,
+     "zero": 0.595,
+     "over": 0,
+     "countedOverTrue": 0.207,
+     "maeCI": [
+      2.03,
+      3.16
+     ]
+    },
+    "after": {
+     "N": 37,
+     "mae": 2.14,
+     "exact": 0.081,
+     "within1": 0.351,
+     "zero": 0.405,
+     "over": 0,
+     "countedOverTrue": 0.347,
+     "maeCI": [
+      1.68,
+      2.65
+     ]
+    }
+   },
+   {
+    "cls": "lunge",
+    "ex": "squat",
+    "split": "val",
+    "subset": "body in view ≥90% of frames",
+    "before": {
+     "N": 26,
+     "mae": 2.5,
+     "exact": 0.077,
+     "within1": 0.231,
+     "zero": 0.538,
+     "over": 0,
+     "countedOverTrue": 0.244,
+     "maeCI": [
+      1.96,
+      3.15
+     ]
+    },
+    "after": {
+     "N": 26,
+     "mae": 1.85,
+     "exact": 0.077,
+     "within1": 0.423,
+     "zero": 0.269,
+     "over": 0,
+     "countedOverTrue": 0.442,
+     "maeCI": [
+      1.42,
+      2.38
+     ]
+    }
+   },
+   {
+    "cls": "lunge",
+    "ex": "squat",
+    "split": "all",
+    "subset": "every clip",
+    "before": {
+     "N": 152,
+     "mae": 2.7,
+     "exact": 0.053,
+     "within1": 0.211,
+     "zero": 0.592,
+     "over": 0,
+     "countedOverTrue": 0.197,
+     "maeCI": [
+      2.45,
+      2.96
+     ]
+    },
+    "after": {
+     "N": 152,
+     "mae": 2.24,
+     "exact": 0.086,
+     "within1": 0.375,
+     "zero": 0.421,
+     "over": 0,
+     "countedOverTrue": 0.336,
+     "maeCI": [
+      1.95,
+      2.51
+     ]
+    }
+   },
+   {
+    "cls": "lunge",
+    "ex": "squat",
+    "split": "all",
+    "subset": "body in view ≥90% of frames",
+    "before": {
+     "N": 101,
+     "mae": 2.46,
+     "exact": 0.069,
+     "within1": 0.257,
+     "zero": 0.485,
+     "over": 0,
+     "countedOverTrue": 0.264,
+     "maeCI": [
+      2.16,
+      2.81
+     ]
+    },
+    "after": {
+     "N": 101,
+     "mae": 1.95,
+     "exact": 0.099,
+     "within1": 0.455,
+     "zero": 0.317,
+     "over": 0,
+     "countedOverTrue": 0.415,
+     "maeCI": [
+      1.67,
+      2.28
+     ]
+    }
+   }
+  ],
+  "cross": [
+   {
+    "clips": "front_raises",
+    "detector": "squat",
+    "before": {
+     "clips": 161,
+     "clipsWithFalseCount": 2,
+     "falseReps": 6,
+     "falseRepsPerMinute": 0.22
+    },
+    "after": {
+     "clips": 161,
+     "clipsWithFalseCount": 3,
+     "falseReps": 9,
+     "falseRepsPerMinute": 0.34
+    }
+   },
+   {
+    "clips": "push_up",
+    "detector": "squat",
+    "before": {
+     "clips": 145,
+     "clipsWithFalseCount": 2,
+     "falseReps": 2,
+     "falseRepsPerMinute": 0.08
+    },
+    "after": {
+     "clips": 145,
+     "clipsWithFalseCount": 6,
+     "falseReps": 8,
+     "falseRepsPerMinute": 0.33
+    }
+   },
+   {
+    "clips": "squat",
+    "detector": "wall_pushup",
+    "before": {
+     "clips": 90,
+     "clipsWithFalseCount": 9,
+     "falseReps": 12,
+     "falseRepsPerMinute": 0.8
+    },
+    "after": {
+     "clips": 90,
+     "clipsWithFalseCount": 15,
+     "falseReps": 23,
+     "falseRepsPerMinute": 1.53
+    }
+   },
+   {
+    "clips": "front_raises",
+    "detector": "wall_pushup",
+    "before": {
+     "clips": 161,
+     "clipsWithFalseCount": 76,
+     "falseReps": 143,
+     "falseRepsPerMinute": 5.33
+    },
+    "after": {
+     "clips": 161,
+     "clipsWithFalseCount": 88,
+     "falseReps": 183,
+     "falseRepsPerMinute": 6.82
+    }
+   },
+   {
+    "clips": "squat",
+    "detector": "arm_raise",
+    "before": {
+     "clips": 90,
+     "clipsWithFalseCount": 16,
+     "falseReps": 27,
+     "falseRepsPerMinute": 1.8
+    },
+    "after": {
+     "clips": 90,
+     "clipsWithFalseCount": 30,
+     "falseReps": 49,
+     "falseRepsPerMinute": 3.27
+    }
+   },
+   {
+    "clips": "lunge",
+    "detector": "arm_raise",
+    "before": {
+     "clips": 152,
+     "clipsWithFalseCount": 24,
+     "falseReps": 41,
+     "falseRepsPerMinute": 1.62
+    },
+    "after": {
+     "clips": 152,
+     "clipsWithFalseCount": 36,
+     "falseReps": 61,
+     "falseRepsPerMinute": 2.41
+    }
+   },
+   {
+    "clips": "situp",
+    "detector": "squat",
+    "before": {
+     "clips": 32,
+     "clipsWithFalseCount": 1,
+     "falseReps": 1,
+     "falseRepsPerMinute": 0.19
+    },
+    "after": {
+     "clips": 32,
+     "clipsWithFalseCount": 4,
+     "falseReps": 5,
+     "falseRepsPerMinute": 0.94
+    }
+   },
+   {
+    "clips": "jumping_jacks",
+    "detector": "squat",
+    "before": {
+     "clips": 33,
+     "clipsWithFalseCount": 1,
+     "falseReps": 3,
+     "falseRepsPerMinute": 0.55
+    },
+    "after": {
+     "clips": 33,
+     "clipsWithFalseCount": 4,
+     "falseReps": 6,
+     "falseRepsPerMinute": 1.09
+    }
+   }
+  ]
+ }
+}

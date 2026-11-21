@@ -7,13 +7,13 @@ import { Switch } from "@/components/dashboard/Switch";
 import { Button } from "@/components/ui/Button";
 import { CameraIcon, NutritionIcon } from "@/components/ui/icons";
 import { usePerception } from "@/features/perception/PerceptionProvider";
-import { DISHES, FOOD_VISION } from "@/features/nutrition/catalog.js";
+import { DISHES, FOOD_VISION, visionLabel } from "@/features/nutrition/catalog.js";
 import { estimateMeal, formatValue } from "@/features/nutrition/engine.js";
 import { checkDimensions, checkFile, errorText, fitWithin } from "@/features/nutrition/image.js";
 import { answer as answerItem, applicable, back as backItem, describeAnswer, newItem, nextQuestion, progress as itemProgress, reopen } from "@/features/nutrition/interview.js";
 import { QuestionCard } from "@/features/nutrition/QuestionCard";
 import { Assumptions, ItemCard, MealSummary } from "@/features/nutrition/Results";
-import { StabilityTracker, suggestionsFrom } from "@/features/nutrition/scan.js";
+import { recognisedFrom, StabilityTracker, suggestionsFrom } from "@/features/nutrition/scan.js";
 import { NutritionFlow } from "@/features/nutrition/state.js";
 import { nutritionStore, useNutrition, type MealLog } from "@/features/nutrition/store";
 import type { Answer, Capture, Item, Meal, Question, Suggestion, Text, VisionResult } from "@/features/nutrition/types";
@@ -23,11 +23,12 @@ import { cn } from "@/lib/cn";
 
 type Screen = string;
 type Method = Capture["method"];
+type Recognised = { label: string; score: number; dishId: string | null };
 const L = (lang: string, x?: Text | null) => (x ? (lang === "bn" ? x.bn : x.en) : "");
 const tx = (lang: string, en: string, bn: string) => (lang === "bn" ? bn : en);
 const fmt = formatValue as (v: unknown, key: string, lang: string) => string;
 const DISH = DISHES as Record<string, { id: string; category: string; en: string; bn: string }>;
-const ADDABLE = ["rice", "dal", "fish_curry", "banana", "apple", "strawberries", "packaged", "other"];
+const ADDABLE = ["rice", "dal", "fish_curry", "banana", "mango", "orange", "guava", "apple", "pear", "peach", "pomegranate", "tomato", "strawberries", "packaged", "other"];
 const SCANNING = ["SCANNING", "QUALITY_WAIT", "CANDIDATE_STABLE"];
 
 const QUALITY_TEXT: Record<string, Text> = {
@@ -59,7 +60,7 @@ export default function NutritionPage() {
   const [focus, setFocus] = useState<{ uid: string; qid: string; previous?: Answer; from: "review" | "back" } | null>(null);
   const [eaten, setEaten] = useState<Record<string, string>>({});
   const [photo, setPhoto] = useState<string | null>(null);
-  const [still, setStill] = useState<{ suggestions: Suggestion[]; vision: VisionResult | null } | null>(null);
+  const [still, setStill] = useState<{ suggestions: Suggestion[]; recognised?: Recognised[]; vision: VisionResult | null } | null>(null);
   const [error, setError] = useState<string>("");
   const [notice, setNotice] = useState<string>("");
   const [scanInfo, setScanInfo] = useState<{ tentative: string | null; warnings: string[]; face: boolean; steady: boolean }>({ tentative: null, warnings: [], face: false, steady: false });
@@ -184,8 +185,10 @@ export default function NutritionPage() {
   const analyzeStill = useCallback(
     async (canvas: HTMLCanvasElement) => {
       const r = await vision.classify(canvas, canvas.width, canvas.height, 20000);
-      const suggestions = r.unavailable || r.timeout || r.error ? [] : (suggestionsFrom(r.categories) as Suggestion[]);
-      setStill({ suggestions, vision: r });
+      const ok = !(r.unavailable || r.timeout || r.error);
+      const suggestions = ok ? (suggestionsFrom(r.categories) as Suggestion[]) : [];
+      const recognised = ok ? (recognisedFrom(r.categories) as Recognised[]) : [];
+      setStill({ suggestions, recognised, vision: r });
       return { suggestions, vision: r };
     },
     [vision.classify],
@@ -508,13 +511,13 @@ export default function NutritionPage() {
   }, [screen, lang]);
 
   const scanMessage = (() => {
-    if (vision.status === "loading") return tx(lang, "Loading the on-device food model (about 9 MB the first time)…", "ডিভাইসের খাবার মডেল লোড হচ্ছে (প্রথমবার প্রায় ৯ MB)…");
+    if (vision.status === "loading") return tx(lang, "Loading the on-device food model (about 20 MB the first time)…", "ডিভাইসের খাবার মডেল লোড হচ্ছে (প্রথমবার প্রায় ২০ MB)…");
     if (vision.status === "error") return tx(lang, "Food suggestions aren't available on this device. You can still take a photo and choose the foods yourself.", "এই ডিভাইসে খাবারের পরামর্শ পাওয়া যাচ্ছে না। তবু ছবি তুলে নিজে খাবার বাছতে পারেন।");
     if (scanInfo.face) return L(lang, QUALITY_TEXT.face);
     const w = scanInfo.warnings.find((x) => QUALITY_TEXT[x]);
     if (w) return L(lang, QUALITY_TEXT[w]);
     if (slow) return tx(lang, "Suggestions are slow on this phone. Tap Capture whenever you're ready.", "এই ফোনে পরামর্শ ধীরে আসছে। প্রস্তুত হলে ছবি তুলুন চাপুন।");
-    if (scanInfo.tentative) return armed ? tx(lang, `Possible: ${L(lang, DISH[scanInfo.tentative])} (experimental). Hold steady…`, `সম্ভবত: ${L(lang, DISH[scanInfo.tentative])} (পরীক্ষামূলক)। স্থির রাখুন…`) : tx(lang, `Possible: ${L(lang, DISH[scanInfo.tentative])} (experimental). Tap Capture when the whole plate is in the square.`, `সম্ভবত: ${L(lang, DISH[scanInfo.tentative])} (পরীক্ষামূলক)। পুরো প্লেট বর্গে এলে ছবি তুলুন চাপুন।`);
+    if (scanInfo.tentative) return armed ? tx(lang, `Possible: ${visionLabel(scanInfo.tentative, lang)} (experimental). Hold steady…`, `সম্ভবত: ${visionLabel(scanInfo.tentative, lang)} (পরীক্ষামূলক)। স্থির রাখুন…`) : tx(lang, `Possible: ${visionLabel(scanInfo.tentative, lang)} (experimental). Tap Capture when the whole plate is in the square.`, `সম্ভবত: ${visionLabel(scanInfo.tentative, lang)} (পরীক্ষামূলক)। পুরো প্লেট বর্গে এলে ছবি তুলুন চাপুন।`);
     return tx(lang, "Point the camera at the food, inside the square. Keep people out of the picture.", "বর্গের ভেতরে খাবারের দিকে ক্যামেরা ধরুন। ছবিতে মানুষ রাখবেন না।");
   })();
 
@@ -569,7 +572,7 @@ export default function NutritionPage() {
           <div className="rounded-2xl bg-wash p-4 text-sm text-muted">
             <p className="font-medium text-ink">{tx(lang, "Good to know", "জেনে রাখুন")}</p>
             <ul className="mt-1 list-disc space-y-1 pl-5">
-              <li>{tx(lang, "The camera can only suggest banana, apple and strawberries, using a general picture model that wasn't trained on food. Suggestions are experimental and may be wrong. You choose every other food yourself.", "ক্যামেরা কেবল কলা, আপেল ও স্ট্রবেরির পরামর্শ দিতে পারে, খাবারে প্রশিক্ষিত নয় এমন সাধারণ ছবির মডেলে। পরামর্শ পরীক্ষামূলক, ভুল হতে পারে। বাকি সব খাবার আপনি নিজে বাছবেন।")}</li>
+              <li>{tx(lang, "The camera recognises 65 foods, including 31 Bangladeshi dishes, with an on-device model trained on public food photos (right about 4 times in 5 on our Bangladeshi test photos; not yet tested on volunteers' own meals). It fills in a food only when it has USDA numbers for it and is sure enough (rice, dal, fish curry, banana, apple, pear, peach, pomegranate, raw tomato, strawberries); for anything else it names the food and you choose. Always check it.", "ক্যামেরা ডিভাইসের ভেতরের একটি মডেলে ৩১টি বাংলাদেশি পদসহ ৬৫টি খাবার চেনে, যা প্রকাশ্য খাবারের ছবিতে প্রশিক্ষিত (আমাদের বাংলাদেশি পরীক্ষার ছবিতে প্রায় প্রতি ৫টিতে ৪টি ঠিক; স্বেচ্ছাসেবকদের নিজের খাবারে এখনো পরীক্ষা হয়নি)। এটি কেবল USDA-র মান আছে এবং যথেষ্ট নিশ্চিত হলে খাবার নিজে বসায় (ভাত, ডাল, মাছের ঝোল, কলা, আপেল, নাশপাতি, পীচ, ডালিম, কাঁচা টমেটো, স্ট্রবেরি); অন্য খাবারের নাম বলে, বাছবেন আপনি। সবসময় যাচাই করুন।")}</li>
               <li>{tx(lang, "Photos are looked at on this device only and are never saved or sent.", "ছবি কেবল এই ডিভাইসে দেখা হয়, কখনো সংরক্ষণ বা পাঠানো হয় না।")}</li>
               <li>{tx(lang, "Numbers are estimates from food tables (USDA), not measurements. ASHA shows what it assumed.", "সংখ্যাগুলো খাদ্য তালিকার (USDA) অনুমান, মাপ নয়। আশা কী ধরে নিয়েছে তা দেখায়।")}</li>
             </ul>
@@ -590,7 +593,7 @@ export default function NutritionPage() {
             {scanInfo.tentative && SCANNING.includes(screen) && (
               <span className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full bg-white/95 px-3 py-1 text-sm font-medium text-ink" data-testid="nutrition-tentative">
                 {tx(lang, "Possible: ", "সম্ভবত: ")}
-                {L(lang, DISH[scanInfo.tentative])} · {tx(lang, "experimental", "পরীক্ষামূলক")}
+                {visionLabel(scanInfo.tentative, lang)} · {tx(lang, "experimental", "পরীক্ষামূলক")}
               </span>
             )}
           </div>
@@ -866,7 +869,7 @@ export default function NutritionPage() {
   );
 }
 
-function StillFindings({ still, lang }: { still: { suggestions: Suggestion[]; vision: VisionResult | null } | null; lang: string }) {
+function StillFindings({ still, lang }: { still: { suggestions: Suggestion[]; recognised?: Recognised[]; vision: VisionResult | null } | null; lang: string }) {
   if (!still) return <p className="text-center text-ink" aria-live="polite">{tx(lang, "Looking at the photo…", "ছবি দেখা হচ্ছে…")}</p>;
   const v = still.vision;
   const warn = [...(v?.quality?.warnings ?? []).filter((w) => QUALITY_TEXT[w]).map((w) => L(lang, QUALITY_TEXT[w])), ...((v?.faceCount ?? 0) > 0 ? [tx(lang, "A face is in this photo. It isn't saved, but you may want to retake it with only the food.", "ছবিতে মুখ আছে। এটি সংরক্ষণ হয় না, তবু শুধু খাবার রেখে আবার তুলতে পারেন।")] : [])];
@@ -877,6 +880,17 @@ function StillFindings({ still, lang }: { still: { suggestions: Suggestion[]; vi
           {tx(lang, "ASHA's camera suggests: ", "আশার ক্যামেরার পরামর্শ: ")}
           <strong>{still.suggestions.map((s) => L(lang, DISH[s.dishId])).join(", ")}</strong>
           <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">{tx(lang, "experimental, check it", "পরীক্ষামূলক, যাচাই করুন")}</span>
+        </p>
+      ) : still.recognised?.length && still.recognised[0].score >= FOOD_VISION.minScore ? (
+        <p className="text-lg text-ink" data-testid="nutrition-recognised">
+          {tx(lang, "Looks like: ", "দেখে মনে হচ্ছে: ")}
+          <strong>{visionLabel(still.recognised[0].label, lang)}</strong>
+          <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">{tx(lang, "experimental, check it", "পরীক্ষামূলক, যাচাই করুন")}</span>
+          <span className="mt-1 block text-sm text-muted">
+            {still.recognised[0].dishId
+              ? tx(lang, `Not added for you: the camera isn't sure enough about this food. If it's right, tap + ${DISH[still.recognised[0].dishId].en} below.`, `নিজে থেকে যোগ হয়নি: ক্যামেরা এই খাবারে যথেষ্ট নিশ্চিত নয়। ঠিক হলে নিচে + ${DISH[still.recognised[0].dishId].bn} চাপুন।`)
+              : tx(lang, "ASHA doesn't have nutrition numbers for this food yet, so it isn't added for you. Choose what you ate below.", "এই খাবারের পুষ্টির হিসাব আশার কাছে এখনো নেই, তাই নিজে থেকে যোগ হয়নি। নিচে যা খেয়েছেন তা বাছুন।")}
+          </span>
         </p>
       ) : (
         <p className="text-lg text-ink">{v?.unavailable || v?.timeout || v?.error ? tx(lang, "No camera suggestion this time. You'll choose the foods next.", "এবার ক্যামেরার পরামর্শ নেই। এরপর আপনি খাবার বাছবেন।") : tx(lang, "ASHA's camera didn't recognise a food it knows. You'll choose the foods next.", "আশার ক্যামেরা চেনা কোনো খাবার পায়নি। এরপর আপনি খাবার বাছবেন।")}</p>
@@ -890,7 +904,7 @@ function StillFindings({ still, lang }: { still: { suggestions: Suggestion[]; vi
   );
 }
 
-function FoodReview({ lang, photo, still, items, method, onRemove, onAdd, onNext, onRetake, onDiscard }: { lang: string; photo: string | null; still: { suggestions: Suggestion[]; vision: VisionResult | null } | null; items: Item[]; method: Method; onRemove: (uid: string) => void; onAdd: (dishId: string) => void; onNext: () => void; onRetake?: () => void; onDiscard: () => void }) {
+function FoodReview({ lang, photo, still, items, method, onRemove, onAdd, onNext, onRetake, onDiscard }: { lang: string; photo: string | null; still: { suggestions: Suggestion[]; recognised?: Recognised[]; vision: VisionResult | null } | null; items: Item[]; method: Method; onRemove: (uid: string) => void; onAdd: (dishId: string) => void; onNext: () => void; onRetake?: () => void; onDiscard: () => void }) {
   return (
     <div className="mx-auto max-w-2xl space-y-4" data-testid="nutrition-food-review">
       {photo && (

@@ -191,3 +191,12 @@ test("Clinician-set angles and side replace the defaults, and unsafe ranges are 
   const rightOnly = createDetector("knee_extension", { side: "right" });
   assert.equal(rightOnly.update(legFrame(100, 0)).valid, false, "a fixed side is never swapped for the other leg");
 });
+
+test("Squat: one missed frame mid-rep (pose not found) doesn't drop the repetition; a long gap still does", () => {
+  const d = createDetector("squat");
+  let { t } = run(d, legFrame, [[178, 178, 500], [178, 100, 900]]);
+  assert.equal(d.update({ landmarks: [], timestamp: t }).valid, false);
+  t += DT;
+  run(d, legFrame, [[100, 100, 300], [100, 178, 900], [178, 178, 400]], t);
+  assert.equal(d.reps, 1, "a single empty frame is bridged");
+});

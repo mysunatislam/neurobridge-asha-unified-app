@@ -2,7 +2,7 @@
 // clinically validated one. A detector never counts what it cannot see: when the needed body part
 // is missing, low-confidence or out of frame it reports why and drops the incomplete repetition.
 
-export const DETECTOR_VERSION = "move-detectors/1.1.0";
+export const DETECTOR_VERSION = "move-detectors/1.3.0";
 
 /** MediaPipe pose landmark indices, person-relative. */
 const POSE = {
@@ -128,13 +128,20 @@ export class PhaseCounter {
   }
 }
 
-/** Demo thresholds per tracked body exercise. Angles in degrees. */
+/**
+ * Demo thresholds per tracked body exercise. Angles in degrees, measured in the camera image.
+ * squat, wall_pushup and arm_raise were re-tuned in 1.2.0 on public exercise video (Countix rep
+ * counts on Kinetics clips: tuned on the training clips, checked on held-out clips; see
+ * docs/MOVE_PUBLIC_VIDEO_VALIDATION.md). A standing knee reads 150-165 degrees in 2D, not 160+, and an
+ * arm raised forward to shoulder height foreshortens to about 60-80 degrees in a front view.
+ * Public gym video is not clinical validation; these are still demo values.
+ */
 export const POSE_RULES = Object.freeze({
-  squat: { joint: ["hip", "knee", "ankle"], direction: "decrease", start: 160, target: 110, ret: 155, hipDrop: 0.15, view: "side", cue: { down: "Lower a little more", up: "Stand all the way up" } },
+  squat: { joint: ["hip", "knee", "ankle"], direction: "decrease", start: 145, target: 125, ret: 140, hipDrop: 0.05, view: "side", cue: { down: "Lower a little more", up: "Stand all the way up" } },
   chair_squat: { joint: ["hip", "knee", "ankle"], direction: "decrease", start: 155, target: 120, ret: 150, hipDrop: 0.1, view: "side", cue: { down: "Lower toward the seat", up: "Stand tall again" } },
   sit_to_stand: { joint: ["hip", "knee", "ankle"], direction: "increase", start: 115, target: 155, ret: 120, hipRise: 0.12, view: "side", cue: { down: "Sit back down slowly", up: "Stand up fully" } },
-  wall_pushup: { joint: ["shoulder", "elbow", "wrist"], direction: "decrease", start: 150, target: 115, ret: 145, view: "side", cue: { down: "Bend your elbows a little more", up: "Push back until your arms are nearly straight" } },
-  arm_raise: { joint: ["hip", "shoulder", "elbow"], direction: "increase", start: 40, target: 75, ret: 45, eitherArm: true, view: "front", cue: { down: "Lower your arm slowly", up: "Raise to shoulder height" } },
+  wall_pushup: { joint: ["shoulder", "elbow", "wrist"], direction: "decrease", start: 135, target: 115, ret: 130, view: "side", cue: { down: "Bend your elbows a little more", up: "Push back until your arms are nearly straight" } },
+  arm_raise: { joint: ["hip", "shoulder", "elbow"], direction: "increase", start: 40, target: 60, ret: 45, eitherArm: true, view: "front", cue: { down: "Lower your arm slowly", up: "Raise to shoulder height" } },
   // Experimental: heel height over the toes, in shin lengths, relative to the person's own flat-foot
   // stance (learned over the first second). Camera-only vertical motion is noisy; manual +1 stays available.
   heel_raise: { signal: "heel_lift", points: ["knee", "ankle", "heel", "foot"], direction: "increase", start: 0.04, target: 0.12, ret: 0.06, calibrateMs: 800, experimental: true, view: "side", cue: { down: "Lower your heels slowly", up: "Rise onto your toes" } },
@@ -209,9 +216,11 @@ export class PoseDetector {
   }
   lost(reason, t) {
     this.badFrames++;
-    this.counter?.reset();
-    this.smooth.reset();
-    this.anchorHip = null;
+    // A single missed frame (pose not found, a joint briefly hidden) no longer throws away the
+    // repetition in progress. The counter and the smoother already start over by themselves when the
+    // next good frame comes more than gapMs (700 ms) after the last one, so a longer occlusion still
+    // drops the unfinished repetition. On public video, resetting on every missed frame lost almost
+    // every count when 1 frame in 10 was missing (docs/MOVE_PUBLIC_VIDEO_VALIDATION.md).
     if (this.baseline === null) (this.samples = []), (this.calibStart = null);
     return { valid: false, reason, reps: this.reps, partials: this.counter?.partials ?? 0, phase: "lost", counted: false, progress: 0, confidence: 0, t };
   }
@@ -266,10 +275,13 @@ export class PoseDetector {
       const hip = lm[POSE[side].hip], knee = lm[POSE[side].knee], ankle = lm[POSE[side].ankle];
       const leg = Math.max(0.08, Math.hypot(hip.x - knee.x, hip.y - knee.y) + Math.hypot(knee.x - ankle.x, knee.y - ankle.y));
       if (this.counter.phase === "find_start" || this.anchorHip === null) {
-        this.anchorHip = hip.y;
+        // Hip height above the ankle, not the hip's place in the picture: a moving or zooming camera
+        // shifts the whole body, and only the hip-to-ankle distance tells a real squat from that.
+        this.anchorHip = ankle.y - hip.y;
         this.legLength = leg;
       }
-      extra = rule.hipDrop ? hip.y - this.anchorHip >= rule.hipDrop * this.legLength : this.anchorHip - hip.y >= rule.hipRise * this.legLength;
+      const height = ankle.y - hip.y;
+      extra = rule.hipDrop ? this.anchorHip - height >= rule.hipDrop * this.legLength : height - this.anchorHip >= rule.hipRise * this.legLength;
     }
     const r = this.counter.update(value, t, extra);
     const toward = this.counter.phase === "returning" ? rule.cue.up : rule.cue.down;

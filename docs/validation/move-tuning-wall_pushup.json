@@ -1,0 +1,88 @@
+{
+ "ex": "wall_pushup",
+ "cls": "push_up",
+ "best": {
+  "rel": false,
+  "start": 135,
+  "target": 115,
+  "hipDrop": null,
+  "minVisibility": 0.6
+ },
+ "baseline": {
+  "train": {
+   "N": 113,
+   "mae": 3.1,
+   "exact": 0.05,
+   "ob1": 0.26,
+   "zero": 0.5,
+   "over": 0.01,
+   "ratio": 0.23
+  },
+  "val": {
+   "N": 32,
+   "mae": 2.75,
+   "exact": 0.03,
+   "ob1": 0.44,
+   "zero": 0.38,
+   "over": 0,
+   "ratio": 0.25
+  },
+  "val_inProtocol": {
+   "N": 21,
+   "mae": 2.43,
+   "exact": 0.05,
+   "ob1": 0.57,
+   "zero": 0.19,
+   "over": 0,
+   "ratio": 0.35
+  },
+  "all_inProtocol": {
+   "N": 101,
+   "mae": 2.87,
+   "exact": 0.07,
+   "ob1": 0.37,
+   "zero": 0.36,
+   "over": 0.01,
+   "ratio": 0.29
+  }
+ },
+ "tuned": {
+  "train": {
+   "N": 113,
+   "mae": 2.65,
+   "exact": 0.12,
+   "ob1": 0.36,
+   "zero": 0.35,
+   "over": 0.01,
+   "ratio": 0.34
+  },
+  "val": {
+   "N": 32,
+   "mae": 2.34,
+   "exact": 0.13,
+   "ob1": 0.53,
+   "zero": 0.28,
+   "over": 0,
+   "ratio": 0.36
+  },
+  "val_inProtocol": {
+   "N": 21,
+   "mae": 1.9,
+   "exact": 0.14,
+   "ob1": 0.71,
+   "zero": 0.1,
+   "over": 0,
+   "ratio": 0.49
+  },
+  "all_inProtocol": {
+   "N": 101,
+   "mae": 2.29,
+   "exact": 0.16,
+   "ob1": 0.5,
+   "zero": 0.18,
+   "over": 0.01,
+   "ratio": 0.44
+  }
+ },
+ "inProtocolShare": 0.696551724137931
+}
