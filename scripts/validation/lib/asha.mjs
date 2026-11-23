@@ -1,6 +1,7 @@
 // Loads Asha's own detection code (unchanged files from the repo) into Node.
-import fs from "node:fs"; import vm from "node:vm"; import { createRequire } from "node:module";
-export const REPO = process.env.ASHA_REPO || new URL("../../..", import.meta.url).pathname.replace(/\/$/, "");
+import fs from "node:fs"; import vm from "node:vm"; import { createRequire } from "node:module"; import { fileURLToPath, pathToFileURL } from "node:url";
+export const REPO = (process.env.ASHA_REPO || fileURLToPath(new URL("../../..", import.meta.url))).replace(/[\\/]$/, "");
+const mod = (f) => import(pathToFileURL(`${REPO}/${f}`).href);
 const require = createRequire(import.meta.url);
 const ctx = { console, Math, Number, Array, Object, JSON, isFinite, Set, Map, Date };
 ctx.window = ctx; ctx.globalThis = ctx;
@@ -11,9 +12,9 @@ for (const f of ["neuroface/utils/landmarks.js", "neuroface/utils/metrics.js", "
 export const NF = ctx;
 export const M = ctx.NF_metrics, LM = ctx.NF_LM;
 export const fingers = ctx.NF_fingerspeakSignal;
-export const gaze = await import(`${REPO}/public/app/everyday/gaze-engine.js`);
-export const { BlinkCounter } = await import(`${REPO}/public/engine/blink-counter.js`);
-export const blinkIntent = await import(`${REPO}/public/engine/blink-intent.js`);
+export const gaze = await mod("public/app/everyday/gaze-engine.js");
+export const { BlinkCounter } = await mod("public/engine/blink-counter.js");
+export const blinkIntent = await mod("public/engine/blink-intent.js");
 export const toLm = (a) => a.map(([x, y, z]) => ({ x, y, z }));
 /** Asha's per-frame face features (public/neuroface/src/vision.js Extractor), from a harness record. */
 export function features(rec, t, extractor) {

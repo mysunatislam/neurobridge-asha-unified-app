@@ -1,7 +1,7 @@
-import http from "node:http"; import fs from "node:fs"; import path from "node:path";
-const here = new URL(".", import.meta.url).pathname;
-const roots = { "/repo/": path.resolve(here, "../../public") + "/", "/data/": path.resolve(process.env.VALIDATION_DATA || path.join(here, "../../../validation-data")) + "/", "/h/": path.join(here, "web") + "/" };
-const types = { ".js": "text/javascript", ".mjs": "text/javascript", ".html": "text/html", ".wasm": "application/wasm", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".json": "application/json", ".task": "application/octet-stream", ".bmp":"image/bmp" };
+import http from "node:http"; import fs from "node:fs"; import path from "node:path"; import { fileURLToPath } from "node:url";
+const here = fileURLToPath(new URL(".", import.meta.url));
+const roots = { "/repo/": path.resolve(here, "../../public") + path.sep, "/data/": path.resolve(process.env.VALIDATION_DATA || path.join(here, "../../../validation-data")) + path.sep, "/h/": path.join(here, "web") + path.sep };
+const types = { ".js": "text/javascript", ".mjs": "text/javascript", ".html": "text/html", ".wasm": "application/wasm", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".json": "application/json", ".task": "application/octet-stream", ".bmp": "image/bmp" };
 http.createServer((req, res) => {
   const u = decodeURIComponent(new URL(req.url, "http://x").pathname);
   const k = Object.keys(roots).find((r) => u.startsWith(r));

@@ -1,13 +1,13 @@
 // MPIIFaceGaze: per-person calibration of Asha's gaze model (public/app/everyday/gaze-engine.js),
 // then accuracy on that person's other images. Targets are screen fractions, like the app.
 import fs from "node:fs"; import { gaze } from "./lib/asha.mjs"; import { pct, ci, wilson, bootstrap, quantile } from "./lib/stats.mjs";
-const { extractGazeFeatures, fitGazeModel, predictGaze, validateGazeModel, calibrationTargets, CHECK_TARGETS } = gaze;
+const { extractGazeFeatures, fitGazeModel, predictGaze, calibrationTargets, CHECK_TARGETS } = gaze;
 const BOARD_LIMITS = [{ size: 9, p90: 0.09, mean: 0.06 }, { size: 6, p90: 0.16, mean: 0.11 }, { size: 2, p90: 0.26, mean: 0.18 }];
 const boardFor = (v) => BOARD_LIMITS.find((l) => v.p90Error <= l.p90 && v.meanError <= l.mean)?.size ?? 0;
 const LAYOUT = { 9: [3, 3], 6: [3, 2], 2: [2, 1] };
-export function people() {
-  const meta = JSON.parse(fs.readFileSync("gaze-meta.json", "utf8")); // {pid: [{id, x, y}]} x,y screen fractions
-  const recs = new Map(fs.readFileSync("gaze.jsonl", "utf8").trim().split("\n").map((l) => { const r = JSON.parse(l); return [r.id, r]; }));
+export function people(dir = ".") {
+  const meta = JSON.parse(fs.readFileSync(`${dir}/gaze-meta.json`, "utf8")); // {pid: [{id, x, y}]} x,y screen fractions
+  const recs = new Map(fs.readFileSync(`${dir}/gaze.jsonl`, "utf8").trim().split("\n").map((l) => { const r = JSON.parse(l); return [r.id, r]; }));
   const out = {};
   for (const [pid, rows] of Object.entries(meta)) {
     out[pid] = rows.map((m) => { const r = recs.get(m.id); if (!r?.face) return { ...m, ok: false, reason: "no face" };
@@ -21,7 +21,13 @@ export function simulate(rows, { ridge = 0.05, points = 9, perPoint = 8 } = {}) 
   const cal = []; for (const t of calibrationTargets(points)) for (const s of near(pool, t, perPoint, used)) { used.add(s); cal.push(s); }
   const chk = []; for (const t of CHECK_TARGETS) for (const s of near(pool, t, 6, used)) { used.add(s); chk.push(s); }
   let model; try { model = fitGazeModel(cal.map((s) => ({ features: s.features, x: s.x, y: s.y })), { ridge }); } catch (e) { return { failed: String(e.message) }; }
-  let v; try { v = validateGazeModel(model, chk.map((s) => ({ features: s.features, x: s.x, y: s.y }))); } catch (e) { return { failed: String(e.message) }; }
+  // The app's check (validateGazeModel) groups samples by the target shown. Here every photo has its
+  // own true gaze point, so the same statistic is computed directly against those points.
+  const perTarget = CHECK_TARGETS.map((t) => chk.filter((s) => Math.hypot(s.x - t[0], s.y - t[1]) < 0.2).length);
+  if (perTarget.some((n) => n < 6)) return { failed: "fewer than six check photos near a check target" };
+  const ce = chk.map((s) => { const p = predictGaze(model, s.features, { requireValidation: false }); return p.valid ? Math.hypot(p.x - s.x, p.y - s.y) : 1; }).sort((a, b) => a - b);
+  const v = { meanError: ce.reduce((a, b) => a + b, 0) / ce.length, p90Error: ce[Math.ceil(ce.length * 0.9) - 1] };
+  v.passed = v.meanError <= 0.06 && v.p90Error <= 0.09;
   model.validation = { ...v, passed: true };
   const test = rows.filter((s) => !used.has(s));
   const errs = [], tiles = {}; let invalid = 0;
@@ -35,7 +41,7 @@ export function simulate(rows, { ridge = 0.05, points = 9, perPoint = 8 } = {}) 
   }
   return { board: boardFor(v), check: v, test: test.length, invalid, errs, tiles, cal: cal.length };
 }
-if (process.argv[1].endsWith("eval-gaze.mjs")) {
+if (process.argv[1]?.endsWith("eval-gaze.mjs")) {
   const P = people(), ridge = +(process.argv[2] || 0.05), points = +(process.argv[3] || 9);
   const all = [], boards = {}; const tileAll = {};
   for (const [pid, rows] of Object.entries(P)) {

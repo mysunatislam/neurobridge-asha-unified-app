@@ -13,5 +13,10 @@ Results and caveats: `docs/validation/PUBLIC_DATA_VALIDATION.md`.
 4. From the folder holding the `.jsonl` files: `node scripts/validation/final-hands.mjs`,
    `eval-genki.mjs`, `tune-stretch.mjs`, `cond-genki.mjs` (after `python3 cond.py genki.jsonl genki.list genki-cond.json`).
 
-`eval-gaze.mjs` (MPIIFaceGaze) and `lib/blink.mjs` (Eyeblink8 / TalkingFace) are ready for the eye
-datasets.
+Eyes, in one command on the computer that holds the sets (nothing but numbers leaves it):
+`node scripts/validation/eyes-pc.mjs <dataDir> <workDir>`. It finds MPIIFaceGaze (`pXX/` with
+`pXX.txt` and `Calibration/screenSize.mat`) and Eyeblink8 / TalkingFace (`.avi` + `.tag`), runs the
+face model on every image and video frame (ffmpeg or `ffmpeg-static` extracts frames, which are
+deleted after each video), scores Asha's gaze calibration, blink counter, slow-blink click and
+triple-blink detectors, sweeps their limits with two-fold cross-validation, and writes
+`summary-eyes.json`.
