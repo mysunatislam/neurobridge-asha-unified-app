@@ -28,10 +28,11 @@ Images are not in the repository; each set's licence asks for research use and c
 | MediaPipe RPS sample (Google, gesture recognizer tutorial) | 500 photos: rock, paper, scissors, none | class | Google sample for the MediaPipe Model Maker tutorial; no licence file in the archive |
 | GENKI-4K (UCSD MPLab) | 4,000 face photos from the web, many people, lights and cameras | smile / no smile, head yaw, pitch, roll | research use with citation |
 
-Eye-blink (Eyeblink8, TalkingFace) and gaze-on-screen (MPIIFaceGaze) sets could not be reached
-from the cloud; their download on the project PC was paused before it finished. The harness
-for them is ready (`eval-gaze.mjs`, `lib/blink.mjs`). Until then EyeSpeak gaze, calibration and
-blink counting have **no public-data result** here.
+| MPIIFaceGaze (MPI Informatics, via DaRUS doi 10.18419/darus-3240) | 15 people, first 250 laptop-webcam photos each, taken during everyday laptop use | where on the screen the person was looking | CC BY-NC-SA 4.0 |
+| Eyeblink8 and TalkingFace (blinkingmatters.com) | 9 videos with every blink marked frame by frame | blink start and end frames | GPL-3.0 per the site |
+
+The eye sets were run on the project's own computer (`scripts/validation/eyes-pc.mjs`), because the
+cloud could not reach them. Only numbers left that computer.
 
 ## FingerSpeak pose reader (and gesture → request)
 
@@ -62,6 +63,35 @@ hand events. An unpractised pose does nothing; a practised pose proposes its req
 first; showing it again while the question is spoken sends nothing; a separate showing after
 the question sends one confirmed request; no repeat within 2.5 s. Note that any practised pose
 confirms a pending question, not only the one that proposed it.
+
+## EyeSpeak gaze calibration (MPIIFaceGaze)
+
+Each person was put through Asha's calibration as it runs in the app (`public/app/everyday/gaze-engine.js`,
+unchanged). Photos nearest to the 9 calibration targets trained the model (8 per target) and
+photos nearest to the 3 check targets ran the app's accuracy check (6 per target). Asha then had to
+place every remaining photo on the screen. Calibration used each photo's true gaze point, so this
+is if anything kinder than real use.
+
+| Measure | Result (current settings) |
+| --- | --- |
+| Photos with a usable face and both eyes | 13 of 15 people 242–250 of 250; 2 people 178 (mostly "adjust camera distance") |
+| Board the app's check would offer | 9 tiles 0 of 15 people, 2 tiles 4 of 15, none 11 of 15 |
+| Gaze error on held-out photos, share of the screen | mean 0.19, median 0.17, 90th percentile 0.36 |
+| Right tile picked, single photo | 2 halves **93% (92–94)**, 6 tiles 62%, 9 tiles 47% |
+
+What this says: on ordinary laptop-webcam photos, one look at a time, Asha's gaze is good enough to
+choose between two halves of the screen and not good enough for 6 or 9 tiles. The app's own
+check behaved correctly: it refused the larger boards for everyone, so nobody would have been given
+a board that misreads them. People who get no board use touch, switch or blink scanning instead.
+
+Tuning, cross-validated by person (settings picked on even-numbered people, scored on odd, and the
+reverse), did not give a clear gain: the best pick (ridge 0.5, 12 photos per target) lowered the
+held-out error only from 0.196 to 0.185 and still gave one board, and the other pick (16 targets)
+failed calibration for every held-out person. The settings were left unchanged.
+
+Limits of this test: single photos, so no averaging over the 1.1 s dwell the app uses; head
+position varies freely between photos; 15 healthy adults; labels are where the person was asked
+to look.
 
 ## FaceSpeak: abnormal stretch on healthy faces
 
@@ -100,4 +130,4 @@ are not labelled in these sets.
 - Single photos, not video: no frame-to-frame tracking, no dwell, no hold timers.
 - Healthy, mostly young web faces and hands; no motor or facial impairment.
 - Labels of HandsDataset and GENKI were made by their authors; their errors are in these numbers.
-- Eyes (gaze, calibration, blinks, eye-cursor clicks) are not yet validated on public data.
+- Gaze was tested on single photos only. Blink counting and slow-blink clicks are still running on the eye videos.
