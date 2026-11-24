@@ -6,7 +6,7 @@
 // Needs ffmpeg (on PATH, or the npm package ffmpeg-static) and Playwright with Chromium
 // (PLAYWRIGHT_MODULE may point at it). Writes landmarks and summary-eyes.json into workDir.
 // Only numbers are printed: no image, frame or face leaves the computer.
-import fs from "node:fs"; import path from "node:path"; import zlib from "node:zlib";
+import fs from "node:fs"; import readline from "node:readline"; import path from "node:path"; import zlib from "node:zlib";
 import { spawn, spawnSync } from "node:child_process"; import { createRequire } from "node:module"; import { fileURLToPath, pathToFileURL } from "node:url";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const [dataArg, workArg, which = "all"] = process.argv.slice(2);
@@ -121,7 +121,7 @@ async function blinkRun() {
     recs[name] = { fps, tag, out };
   }
   fs.rmSync(path.join(DATA, "_frames"), { recursive: true, force: true });
-  const { runVideo, match } = await import(pathToFileURL(path.join(here, "lib", "blink.mjs")).href);
+  const { frameStepper, runFrames, match } = await import(pathToFileURL(path.join(here, "lib", "blink.mjs")).href);
   const { wilson } = await import(pathToFileURL(path.join(here, "lib", "stats.mjs")).href);
   const src = fs.readFileSync(path.join(here, "..", "..", "public", "engine", "blink-counter.js"), "utf8");
   // Variants of the counter's limits, made by editing a copy of its source (the app file is unchanged).
@@ -130,11 +130,21 @@ async function blinkRun() {
       .replaceAll("* 0.2 &&", `* ${recover} &&`).replace("c.minRight) * 0.2;", `c.minRight) * ${recover};`).replace("c.lows >= 2 && duration >= 65", `c.lows >= ${lows} && duration >= 65`);
     const f = path.join(WORK, `bc-${frac}-${abs}-${recover}-${lows}.mjs`); fs.writeFileSync(f, s); return (await import(pathToFileURL(f).href)).BlinkCounter;
   };
-  const data = Object.fromEntries(Object.entries(recs).map(([n, r]) => { const lines = fs.readFileSync(r.out, "utf8").trim().split("\n").map((l) => JSON.parse(l)); lines.sort((a, b) => +a.id - +b.id);
+  // Read each video's landmarks line by line and keep only what the blink detectors use (a full
+  // face mesh per frame for ~70,000 frames does not fit in a small laptop's memory).
+  const data = {};
+  for (const [n, r] of Object.entries(recs)) {
+    // Frames are in order in the file (one writer, resumed in order); check it rather than sort,
+    // so each face mesh is reduced to its blink inputs and dropped as it is read.
+    const step = frameStepper(r.fps); let k = 0; const rl = readline.createInterface({ input: fs.createReadStream(r.out), crlfDelay: Infinity });
+    for await (const l of rl) if (l.trim()) { const rec = JSON.parse(l); if (+rec.id !== k) throw new Error(`${n}: frame ${rec.id} out of order at line ${k}`); step.push(rec); k++; }
+    const pre = step.frames;
     const t = parseTag(fs.readFileSync(r.tag, "utf8")); const shift = t.first === 1 ? 1 : 0; // tags that count frames from 1
-    return [n, { fps: r.fps, recs: lines, gt: t.blinks.map((b) => ({ start: b.start - shift, end: b.end - shift })) }]; }));
+    data[n] = { fps: r.fps, pre, gt: t.blinks.map((b) => ({ start: b.start - shift, end: b.end - shift })) };
+    console.error(`${n}: ${pre.length} frames, ${data[n].gt.length} blinks`);
+  }
   const evalSet = (names, Counter) => { let tp = 0, fp = 0, fn = 0, mins = 0, clicks = 0, triples = 0, valid = 0, frames = 0; const per = {};
-    for (const n of names) { const d = data[n], r = runVideo(d.recs, d.fps, { Counter }), m = match(r.blinks, d.gt); tp += m.tp; fp += m.fp; fn += m.fn;
+    for (const n of names) { const d = data[n], r = runFrames(d.pre, d.fps, { Counter }), m = match(r.blinks, d.gt); tp += m.tp; fp += m.fp; fn += m.fn;
       const min = r.valid / d.fps / 60; mins += min; valid += r.valid; frames += r.frames; const c = r.long.filter((e) => e.kind === "click").length; clicks += c; triples += r.triples;
       per[n] = { blinks: d.gt.length, ...m, minutes: +min.toFixed(2), faceFrames: r.valid / r.frames, longBlinkClicks: c, triples: r.triples }; }
     const P = tp / (tp + fp || 1), R = tp / (tp + fn || 1);
@@ -146,7 +156,7 @@ async function blinkRun() {
   const best = (set) => counters.map(({ o, C }) => ({ o, C, r: evalSet(set, C) })).sort((a, b) => b.r.f1 - a.r.f1)[0];
   const bA = best(A), bB = best(B);
   // LongBlink (eye-cursor click): every recording here is natural blinking, so any click is a false click.
-  summary.blink = { videos: names.map((n) => ({ name: n, fps: data[n].fps, frames: data[n].recs.length, blinks: data[n].gt.length })), current: evalSet(names, null),
+  summary.blink = { videos: names.map((n) => ({ name: n, fps: data[n].fps, frames: data[n].pre.length, blinks: data[n].gt.length })), current: evalSet(names, null),
     sweep: counters.map(({ o, C }) => ({ ...o, ...(({ per, ...r }) => r)(evalSet(names, C)) })),
     crossValidated: { pickedOnEven: bA.o, heldOutOdd: evalSet(B, bA.C), currentOdd: evalSet(B, null), pickedOnOdd: bB.o, heldOutEven: evalSet(A, bB.C), currentEven: evalSet(A, null) } };
   save(); for (const f of fs.readdirSync(WORK)) if (f.startsWith("bc-")) fs.rmSync(path.join(WORK, f));
