@@ -12,7 +12,7 @@ const stopAt = Math.min(lines.length, done + (+process.env.MAX_LINES || Infinity
 const B = mode === "image" ? 20 : 60; const t0 = Date.now();
 let b, p;
 async function open() {
-  if (b) await b.close().catch(() => {});
+  if (b) await Promise.race([b.close().catch(() => {}), new Promise((r) => setTimeout(r, 15000))]);
   b = await chromium.launch({ args: ["--no-sandbox", "--js-flags=--max-old-space-size=4096"] }); p = await b.newPage();
   p.on("console", (m) => { try { if (m.type() === "error") console.error("page:", m.text()); } catch {} }); p.on("crash", () => console.error("page crashed"));
   await p.goto("http://127.0.0.1:8765/h/index.html"); await p.waitForFunction(() => window.ready, null, { timeout: 120000 });
@@ -34,4 +34,5 @@ for (let i = done; i < stopAt; i += B) {
   res.forEach((r, j) => out.write(JSON.stringify({ id: chunk[j].length > 3 ? chunk[j][3] : chunk[j][0], ...r }) + "\n"));
   if ((i / B) % 10 === 0) console.error(`${i + res.length}/${lines.length} ${((Date.now() - t0) / 1000).toFixed(0)}s`);
 }
-await new Promise((r) => out.end(r)); await b.close();
+// A browser lost to sleep can hang close(); never let that hold the pass open.
+await new Promise((r) => out.end(r)); await Promise.race([b.close().catch(() => {}), new Promise((r) => setTimeout(r, 15000))]); process.exit(0);
