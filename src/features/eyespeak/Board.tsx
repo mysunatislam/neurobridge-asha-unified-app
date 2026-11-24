@@ -29,7 +29,7 @@ export type BoardMode = "gaze" | "scan";
  *
  * Gaze: a tile is chosen after the smoothed gaze point stays on it for the selection time (brief
  * jitter, blinks and slow frames pause rather than restart it), or at once with a slow blink (eyes
- * closed for about half a second; natural blinks don't count). With accuracy for only two halves of
+ * closed for 0.7 s or more; natural blinks don't count). With accuracy for only two halves of
  * the screen, the halves open in steps until a word is reached, and closing the eyes for two seconds
  * goes back a step.
  *

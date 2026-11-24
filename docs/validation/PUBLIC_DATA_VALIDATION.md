@@ -93,6 +93,57 @@ Limits of this test: single photos, so no averaging over the 1.1 s dwell the app
 position varies freely between photos; 15 healthy adults; labels are where the person was asked
 to look.
 
+## Blinks (Eyeblink8, TalkingFace)
+
+9 videos at 30 frames per second (8 Eyeblink8, 1 TalkingFace), 76,356 frames, 42.3 minutes, 469
+blinks marked frame by frame by the datasets' authors. The face was found in 99.8% of frames. Asha's
+blink counter (`public/engine/blink-counter.js`) ran on every frame in order, as in the app; a
+counted blink matched a marked blink when they overlapped within 3 frames.
+
+| Blink counter | Blinks caught (recall) | Counted blinks that were real (precision) | F1 |
+| --- | --- | --- | --- |
+| Before, all 9 videos | 77.6% (73.6–81.2), 364 of 469 | 97.6% (95.5–98.7) | 0.865 |
+| Before, held-out half A (4 videos) | 79.7% | 99.5% | 0.885 |
+| Before, held-out half B (5 videos) | 75.5% | 95.7% | 0.844 |
+| Picked setting, held-out half A | **89.7%** | 98.1% | 0.937 |
+| Picked setting, held-out half B | **88.2%** | 95.0% | 0.915 |
+
+Most misses were blinks whose eyes reopened slowly: the counter waited for each eye to come back
+within 20% of its dip. 90 settings were compared, picked on one half of the videos and scored on
+the other. Both halves picked the same reopening limit, 35%. The app now uses 35%
+(`REOPEN_WITHIN`) and keeps its rule that a blink needs two dipped frames, which the search found
+made almost no difference (F1 0.921 vs 0.926 on all videos). The counter as it now is:
+
+| Blink counter now | Recall | Precision | F1 |
+| --- | --- | --- | --- |
+| All 9 videos | **87.8% (84.6–90.5)**, 412 of 469 | 96.7% (94.6–98.0) | 0.921 |
+| Half A | 88.4% | 98.1% | 0.930 |
+| Half B | 87.3% | 95.4% | 0.912 |
+
+**Triple-blink request.** Natural blinking matched the rapid triple-blink pattern 4 times in 42
+minutes (about once every 10 minutes). That only proposes a request; it is sent only after a
+separate confirmation.
+
+**Slow-blink click (eye cursor).** Nobody in these videos was trying to click, so every click is a
+false one. The current click (both eyes closed for 0.4–1.6 s) fired 45 times in 42 minutes, about
+once a minute. Of 439 natural closures the click detector measured, half lasted 0.2 s or less,
+90% 0.4 s or less and 95% 0.63 s or less; 51 lasted 0.4 s or more.
+
+| Shortest click | False clicks in 42 minutes | Per minute |
+| --- | --- | --- |
+| 0.4 s (before) | 45 | 1.06 |
+| 0.5 s | 25 | 0.59 |
+| 0.6 s | 18 | 0.43 |
+| **0.7 s (now)** | **12** | **0.28** |
+| 0.8 s | 11 | 0.26 |
+| 1.0 s | 6 | 0.14 |
+
+The click now needs the eyes closed for 0.7 s (`SLOW_BLINK_MIN_MS`), still up to 1.6 s. That cuts
+false clicks by about three quarters; going further gains little until 1 s, which is harder to hold.
+Requiring the eyes more fully closed would cut a few more, but was not changed, because people with
+weak eyelids may not close them fully. What these videos cannot show is how easily intended users
+make a 0.7 s blink; that needs the pilot. The app's help text now says "about a second".
+
 ## FaceSpeak: abnormal stretch on healthy faces
 
 The lateral lip shift is the mouth centre minus the nose tip, in face widths. On 1,820
@@ -130,4 +181,4 @@ are not labelled in these sets.
 - Single photos, not video: no frame-to-frame tracking, no dwell, no hold timers.
 - Healthy, mostly young web faces and hands; no motor or facial impairment.
 - Labels of HandsDataset and GENKI were made by their authors; their errors are in these numbers.
-- Gaze was tested on single photos only. Blink counting and slow-blink clicks are still running on the eye videos.
+- Gaze was tested on single photos only. Blinks were tested on 9 videos of healthy adults sitting at a computer, not on people with weak eyelid control.

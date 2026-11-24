@@ -18,12 +18,16 @@ const median = (a) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)];
 
 /**
  * A slow, deliberate blink is a click; a natural blink is not. Natural blinks close the eyes for
- * about 0.1 to 0.3 s, so a click needs both eyes closed for minMs to maxMs. Longer closures are
+ * about 0.1 to 0.3 s, but in 42 minutes of public blink videos (Eyeblink8, TalkingFace) 1 natural
+ * closure in 10 lasted 0.4 s or more: a 0.4 s minimum clicked about once a minute with nobody
+ * trying, 0.7 s about once in 3.5 minutes (docs/validation/PUBLIC_DATA_VALIDATION.md). So a click
+ * needs both eyes closed for minMs (0.7 s) to maxMs. Longer closures are
  * resting the eyes, not a click. The eyes must have been open for openMs first, and "closed" is
  * measured against this person's own open eyes over the last few seconds, not a fixed number.
  */
+export const SLOW_BLINK_MIN_MS = 700;
 export class LongBlink {
-  constructor({ minMs = 400, maxMs = 1600, openMs = 300 } = {}) {
+  constructor({ minMs = SLOW_BLINK_MIN_MS, maxMs = 1600, openMs = 300 } = {}) {
     this.opts = { minMs, maxMs, openMs };
     this.reset();
   }

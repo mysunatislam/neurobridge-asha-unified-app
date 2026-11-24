@@ -97,7 +97,7 @@ const lookAtTile = (page, id) =>
     window.__look = { x: (r.left + r.width / 2) / innerWidth, y: (r.top + r.height / 2) / innerHeight };
   }, id);
 /** Close both eyes for `ms`, then open them again. */
-async function slowBlink(page, ms = 650) {
+async function slowBlink(page, ms = 950) {
   await page.evaluate((ms) => Object.assign(window, { __closedFrom: performance.now(), __closedUntil: performance.now() + ms }), ms);
   await page.waitForTimeout(ms + 300);
 }
@@ -278,7 +278,7 @@ async function startEyes(page) {
         new MutationObserver((_, obs) => {
           if (!food.dataset.scan) return;
           obs.disconnect();
-          Object.assign(window, { __closedFrom: performance.now(), __closedUntil: performance.now() + 650 });
+          Object.assign(window, { __closedFrom: performance.now(), __closedUntil: performance.now() + 950 });
           done();
         }).observe(food, { attributes: true });
       }),
