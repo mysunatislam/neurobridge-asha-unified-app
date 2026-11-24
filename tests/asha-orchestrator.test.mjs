@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   createAshaOrchestrator,
+  proposalReply,
   resolveLanguage,
   selectAshaTask,
 } from "../src/server/lib/asha-orchestrator.js";
@@ -282,4 +283,49 @@ test("chat cites only retrieved IDs and rejects invented citations", async () =>
   assert.equal(result.orchestration.verified, false);
   assert.deepEqual(result.sources, []);
   assert.equal(result.proposal, undefined);
+});
+
+test("a proposed request gets Asha's own wording, never a claim that the model will act", async () => {
+  const provider = fakeProvider(
+    '{"reply":"I will check if water is available and provide it.","source_ids":[],"tool_calls":[]}',
+  );
+  const result = await createAshaOrchestrator({ provider }).run({
+    patientId: "patient-a",
+    profile,
+    text: "I need water please",
+    language: "auto",
+  });
+  assert.equal(result.proposal.kind, "water");
+  assert.equal(result.reply, proposalReply("water", "en"));
+  assert.match(result.reply, /Nothing is sent until you press the button/);
+  assert.doesNotMatch(result.reply, /I will/);
+});
+
+test("the request wording follows the patient's language", async () => {
+  const provider = fakeProvider(
+    '{"reply":"আমি একটি প্রোগ্রাম প্ল্যান করছি।","source_ids":[],"tool_calls":[{"name":"propose_caregiver_request","arguments":{"kind":"food"}}]}',
+  );
+  const result = await createAshaOrchestrator({ provider }).run({
+    patientId: "patient-a",
+    profile,
+    text: "আমি একটু খাবার চাই",
+    language: "auto",
+  });
+  assert.equal(result.proposal.kind, "food");
+  assert.equal(result.reply, proposalReply("food", "bn"));
+  assert.match(result.reply, /খাবার/);
+});
+
+test("without a request the model's verified reply is kept", async () => {
+  const provider = fakeProvider(
+    '{"reply":"Asha can read your messages aloud.","source_ids":[],"tool_calls":[]}',
+  );
+  const result = await createAshaOrchestrator({ provider }).run({
+    patientId: "patient-a",
+    profile,
+    text: "Can Asha read messages aloud?",
+    language: "auto",
+  });
+  assert.equal(result.proposal, undefined);
+  assert.equal(result.reply, "Asha can read your messages aloud.");
 });

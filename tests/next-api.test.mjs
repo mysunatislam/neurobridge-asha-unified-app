@@ -165,3 +165,22 @@ test("Migrated authenticated cleanup still expires Everyday workspaces and old s
   assert.ok(await store.read(liveClinic + "profile.json"));
   await store.remove(await store.list(liveClinic));
 });
+
+test("The on-device demo can ask Asha as a guest and always gets a valid reply", async () => {
+  const route = toRouteHandler(ashaHandler);
+  const refused = await route(request({ guest: true, text: "What can you help me with?" }));
+  assert.equal(refused.status, 400);
+  const before = cloudCalls;
+  const response = await route(
+    request({ guest: true, consent: true, text: "What can you help me with?" }),
+  );
+  assert.equal(response.status, 200);
+  const result = await response.json();
+  // The cloud stub fails, so the answer comes from Asha's guide, never an error.
+  assert.ok(cloudCalls > before);
+  assert.equal(result.answeredBy, "guide");
+  assert.ok(result.reply.length > 20);
+  assert.equal(result.proposal, undefined);
+  const noGuest = await route(request({ consent: true, text: "Hello" }));
+  assert.equal(noGuest.status, 401);
+});

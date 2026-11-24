@@ -18,5 +18,8 @@ export default function handler(req, res) {
         ? "supabase"
         : "blob",
     pushConfigured: !!process.env.VAPID_PRIVATE_KEY,
+    llmProvider: ["ollama", "maira-local"].includes(process.env.ASHA_LLM_PROVIDER)
+      ? process.env.ASHA_LLM_PROVIDER
+      : "maira",
   });
 }

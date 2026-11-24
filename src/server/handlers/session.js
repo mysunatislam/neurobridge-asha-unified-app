@@ -12,6 +12,7 @@ import {
   events,
   authFail,
 } from "../lib/common.js";
+import { notifyRequestCreated } from "../lib/workflow.js";
 import {
   hash,
   assessment,
@@ -145,7 +146,20 @@ export default async function handler(req, res) {
             await store.remove([path(id, "push")]);
         }
       }
-      return res.json({ event, push });
+      // Optional caregiver escalation workflow (n8n): ids and kind only.
+      const workflow =
+        ev.confirmed &&
+        ["water", "food", "toilet", "comfort", "help", "message"].includes(
+          ev.kind,
+        )
+          ? await notifyRequestCreated({
+              patientId: id,
+              requestId: b.id,
+              kind: ev.kind,
+              at: event.at,
+            })
+          : "not_applicable";
+      return res.json({ event, push, workflow });
     }
     if (["receive", "ack"].includes(b.action) && role === "caregiver") {
       if (!/^[a-f0-9-]{36}$/.test(b.id || ""))

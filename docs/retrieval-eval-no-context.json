@@ -1,0 +1,1496 @@
+{
+  "ranAt": "2026-11-18T13:14:41.767Z",
+  "cases": 34,
+  "languages": {
+    "en": 23,
+    "bn": 11
+  },
+  "metric": "recall@3 and MRR@5 at passage level: a passage counts when its guide is one the question expects",
+  "hybridIndex": "3b618589e5fbfe47:semantic-v1:gte-small",
+  "methods": {
+    "bm25.local": "in-app BM25 over the same guides, with the bilingual lexicon (the offline fallback)",
+    "semantic": "pgvector cosine on gte-small embeddings only",
+    "fullText": "Postgres full text (english config) only",
+    "hybrid": "semantic and full text fused with reciprocal rank fusion (k=50)",
+    "hybridGraph": "what the app serves: top two hybrid passages, then the best knowledge-graph neighbour",
+    ".raw / .rewritten": "without / with bilingual query rewriting"
+  },
+  "summary": {
+    "all": {
+      "bm25.local": {
+        "recallAt3": 0.941,
+        "mrr": 0.882
+      },
+      "hybrid.raw": {
+        "recallAt3": 0.735,
+        "mrr": 0.684
+      },
+      "fullText.raw": {
+        "recallAt3": 0.618,
+        "mrr": 0.569
+      },
+      "semantic.raw": {
+        "recallAt3": 0.735,
+        "mrr": 0.713
+      },
+      "hybridGraph.raw": {
+        "recallAt3": 0.765,
+        "mrr": 0.701
+      },
+      "hybrid.rewritten": {
+        "recallAt3": 1,
+        "mrr": 0.941
+      },
+      "fullText.rewritten": {
+        "recallAt3": 0.941,
+        "mrr": 0.877
+      },
+      "semantic.rewritten": {
+        "recallAt3": 1,
+        "mrr": 0.966
+      },
+      "hybridGraph.rewritten": {
+        "recallAt3": 1,
+        "mrr": 0.956
+      }
+    },
+    "en": {
+      "bm25.local": {
+        "recallAt3": 0.913,
+        "mrr": 0.826
+      },
+      "hybrid.raw": {
+        "recallAt3": 1,
+        "mrr": 0.935
+      },
+      "fullText.raw": {
+        "recallAt3": 0.913,
+        "mrr": 0.841
+      },
+      "semantic.raw": {
+        "recallAt3": 1,
+        "mrr": 0.978
+      },
+      "hybridGraph.raw": {
+        "recallAt3": 1,
+        "mrr": 0.957
+      },
+      "hybrid.rewritten": {
+        "recallAt3": 1,
+        "mrr": 0.935
+      },
+      "fullText.rewritten": {
+        "recallAt3": 0.913,
+        "mrr": 0.841
+      },
+      "semantic.rewritten": {
+        "recallAt3": 1,
+        "mrr": 0.978
+      },
+      "hybridGraph.rewritten": {
+        "recallAt3": 1,
+        "mrr": 0.957
+      }
+    },
+    "bn": {
+      "bm25.local": {
+        "recallAt3": 1,
+        "mrr": 1
+      },
+      "hybrid.raw": {
+        "recallAt3": 0.182,
+        "mrr": 0.159
+      },
+      "fullText.raw": {
+        "recallAt3": 0,
+        "mrr": 0
+      },
+      "semantic.raw": {
+        "recallAt3": 0.182,
+        "mrr": 0.159
+      },
+      "hybridGraph.raw": {
+        "recallAt3": 0.273,
+        "mrr": 0.167
+      },
+      "hybrid.rewritten": {
+        "recallAt3": 1,
+        "mrr": 0.955
+      },
+      "fullText.rewritten": {
+        "recallAt3": 1,
+        "mrr": 0.955
+      },
+      "semantic.rewritten": {
+        "recallAt3": 1,
+        "mrr": 0.939
+      },
+      "hybridGraph.rewritten": {
+        "recallAt3": 1,
+        "mrr": 0.955
+      }
+    }
+  },
+  "rows": [
+    {
+      "id": "en-01",
+      "language": "en",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "en-02",
+      "language": "en",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.raw": {
+        "hit": true,
+        "reciprocalRank": 0.5
+      },
+      "fullText.raw": {
+        "hit": true,
+        "reciprocalRank": 0.5
+      },
+      "semantic.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.raw": {
+        "hit": true,
+        "reciprocalRank": 0.5
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 0.5
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 0.5
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 0.5
+      }
+    },
+    {
+      "id": "en-03",
+      "language": "en",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "en-04",
+      "language": "en",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 0.5
+      },
+      "hybrid.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "en-05",
+      "language": "en",
+      "bm25.local": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "hybrid.raw": {
+        "hit": true,
+        "reciprocalRank": 0.5
+      },
+      "fullText.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "semantic.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 0.5
+      },
+      "fullText.rewritten": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "en-06",
+      "language": "en",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "en-07",
+      "language": "en",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "en-08",
+      "language": "en",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "en-09",
+      "language": "en",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "en-10",
+      "language": "en",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "en-11",
+      "language": "en",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 0.5
+      },
+      "hybrid.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "en-12",
+      "language": "en",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "en-13",
+      "language": "en",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.raw": {
+        "hit": true,
+        "reciprocalRank": 0.5
+      },
+      "fullText.raw": {
+        "hit": true,
+        "reciprocalRank": 0.3333333333333333
+      },
+      "semantic.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.raw": {
+        "hit": true,
+        "reciprocalRank": 0.5
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 0.5
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 0.3333333333333333
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 0.5
+      }
+    },
+    {
+      "id": "en-14",
+      "language": "en",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "en-15",
+      "language": "en",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "en-16",
+      "language": "en",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "en-17",
+      "language": "en",
+      "bm25.local": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "hybrid.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "semantic.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "en-18",
+      "language": "en",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 0.5
+      },
+      "hybrid.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "en-19",
+      "language": "en",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "en-20",
+      "language": "en",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 0.5
+      },
+      "hybrid.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.raw": {
+        "hit": true,
+        "reciprocalRank": 0.5
+      },
+      "semantic.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 0.5
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "en-21",
+      "language": "en",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "en-22",
+      "language": "en",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.raw": {
+        "hit": true,
+        "reciprocalRank": 0.5
+      },
+      "hybridGraph.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 0.5
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "en-23",
+      "language": "en",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "bn-01",
+      "language": "bn",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "fullText.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "semantic.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "hybridGraph.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 0.5
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 0.5
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 0.3333333333333333
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 0.5
+      }
+    },
+    {
+      "id": "bn-02",
+      "language": "bn",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.raw": {
+        "hit": true,
+        "reciprocalRank": 0.5
+      },
+      "fullText.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "semantic.raw": {
+        "hit": true,
+        "reciprocalRank": 0.5
+      },
+      "hybridGraph.raw": {
+        "hit": true,
+        "reciprocalRank": 0.5
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "bn-03",
+      "language": "bn",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.raw": {
+        "hit": false,
+        "reciprocalRank": 0.25
+      },
+      "fullText.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "semantic.raw": {
+        "hit": false,
+        "reciprocalRank": 0.25
+      },
+      "hybridGraph.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "bn-04",
+      "language": "bn",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "fullText.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "semantic.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "hybridGraph.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "bn-05",
+      "language": "bn",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "semantic.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.raw": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "bn-06",
+      "language": "bn",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "fullText.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "semantic.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "hybridGraph.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "bn-07",
+      "language": "bn",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "fullText.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "semantic.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "hybridGraph.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "bn-08",
+      "language": "bn",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "fullText.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "semantic.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "hybridGraph.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "bn-09",
+      "language": "bn",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "fullText.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "semantic.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "hybridGraph.raw": {
+        "hit": true,
+        "reciprocalRank": 0.3333333333333333
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "bn-10",
+      "language": "bn",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "fullText.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "semantic.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "hybridGraph.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    },
+    {
+      "id": "bn-11",
+      "language": "bn",
+      "bm25.local": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybrid.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "fullText.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "semantic.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "hybridGraph.raw": {
+        "hit": false,
+        "reciprocalRank": 0
+      },
+      "hybrid.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "fullText.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "semantic.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      },
+      "hybridGraph.rewritten": {
+        "hit": true,
+        "reciprocalRank": 1
+      }
+    }
+  ]
+}

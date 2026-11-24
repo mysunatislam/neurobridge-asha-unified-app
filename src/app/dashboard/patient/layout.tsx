@@ -9,6 +9,7 @@ import { EyeCursor } from "@/features/eyespeak/EyeCursor";
 import { PerceptionProvider } from "@/features/perception/PerceptionProvider";
 import { RequestProvider } from "@/features/requests/RequestProvider";
 import { SignalTriggers } from "@/features/requests/SignalTriggers";
+import { SignalRecorder } from "@/features/risk/SignalRecorder";
 import { PatientProfileProvider } from "@/features/session/PatientProfileProvider";
 import { usePatientProfile } from "@/features/session/usePatientProfile";
 
@@ -24,6 +25,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
       <PatientProfileProvider>
         <RequestProvider>
           <SignalTriggers />
+          <SignalRecorder />
           <VisitTracker />
           <DashboardShell role="patient" sidebarFooter={<CameraDock />} topbarExtra={<ConnectionPill />}>
             {children}

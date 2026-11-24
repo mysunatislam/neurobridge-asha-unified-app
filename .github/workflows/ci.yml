@@ -1,0 +1,34 @@
+# Runs the unit tests and the type check on pull requests and on main.
+# The tests need no secrets and no network services: the store, the model
+# providers and the retrieval index are faked or run in memory.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Unit tests
+        run: npm test
+      - name: Type check
+        run: npx tsc --noEmit -p .
+      - name: Local model chart matches the eval summary
+        run: node scripts/local-llm-chart.mjs --check

@@ -8,6 +8,8 @@ import { PlayIcon } from "./icons";
 type VideoFrameProps = {
   /** Video file URL. Leave empty until the video is ready — a poster placeholder is shown. */
   src?: string;
+  /** YouTube video id. When set, the play button opens YouTube's player inside the frame. */
+  youtubeId?: string;
   /** Poster image. When omitted, a branded placeholder with the Asha avatar is shown. */
   poster?: string;
   posterAlt: string;
@@ -18,9 +20,10 @@ type VideoFrameProps = {
   className?: string;
 };
 
-export function VideoFrame({ src, poster, posterAlt, label, duration, mode = "click", className }: VideoFrameProps) {
+export function VideoFrame({ src, youtubeId, poster, posterAlt, label, duration, mode = "click", className }: VideoFrameProps) {
   const video = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
+  const playable = Boolean(src || youtubeId);
   const frame = cn(
     "relative aspect-video w-full overflow-hidden rounded-[28px] bg-brand-soft shadow-float ring-1 ring-line/60",
     className,
@@ -37,7 +40,17 @@ export function VideoFrame({ src, poster, posterAlt, label, duration, mode = "cl
 
   return (
     <div className={frame}>
-      {src && playing ? (
+      {youtubeId && playing ? (
+        <iframe
+          className="absolute inset-0 size-full"
+          src={`https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&rel=0&modestbranding=1&playsinline=1`}
+          title={label ?? posterAlt}
+          allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+          allowFullScreen
+          // The site sends no-referrer; YouTube's player refuses to start without the page origin.
+          referrerPolicy="strict-origin-when-cross-origin"
+        />
+      ) : src && playing ? (
         <video ref={video} className="size-full object-cover" src={src} poster={poster} controls autoPlay playsInline>
           Your browser does not support embedded video.
         </video>
@@ -46,8 +59,8 @@ export function VideoFrame({ src, poster, posterAlt, label, duration, mode = "cl
           type="button"
           className="group absolute inset-0 text-white disabled:cursor-default"
           onClick={() => setPlaying(true)}
-          disabled={!src}
-          aria-label={src ? `Play: ${label ?? posterAlt}` : posterAlt}
+          disabled={!playable}
+          aria-label={playable ? `Play: ${label ?? posterAlt}` : posterAlt}
         >
           {poster ? (
             <Image src={poster} alt={posterAlt} fill sizes="(max-width: 768px) 100vw, 900px" className="object-cover" />
@@ -70,7 +83,7 @@ export function VideoFrame({ src, poster, posterAlt, label, duration, mode = "cl
               </span>
               <span className="text-left leading-tight">
                 <span className="block font-medium">{label}</span>
-                <span className="block text-sm text-white/80">{src ? duration : "Video coming soon"}</span>
+                <span className="block text-sm text-white/80">{playable ? duration : "Video coming soon"}</span>
               </span>
             </span>
           )}

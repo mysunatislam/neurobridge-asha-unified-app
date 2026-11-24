@@ -1,0 +1,189 @@
+{
+  "ranAt": "2026-11-18T17:59:54.588Z",
+  "machine": {
+    "cpu": "12th Gen Intel(R) Core(TM) i5-1235U",
+    "cores": 12,
+    "memoryGb": 16,
+    "platform": "win32 10.0.26200"
+  },
+  "ollama": "0.40.16",
+  "cases": 14,
+  "models": [
+    {
+      "model": "qwen2.5:1.5b",
+      "quantization": "Q4_K_M",
+      "parameters": "1.5B",
+      "loadMs": 3542,
+      "medianMs": 5172,
+      "p95Ms": 9651,
+      "validJson": [
+        14,
+        14
+      ],
+      "errors": [
+        0,
+        14
+      ],
+      "rightRequest": [
+        10,
+        11
+      ],
+      "modelCalledTool": [
+        0,
+        5
+      ],
+      "noRequestWhenNotAsked": [
+        6,
+        6
+      ],
+      "injectionSafe": [
+        1,
+        1
+      ],
+      "speechCorrect": [
+        2,
+        3
+      ],
+      "banglaReplies": [
+        4,
+        4
+      ],
+      "citedSource": [
+        0,
+        2
+      ]
+    },
+    {
+      "model": "llama3.2:1b",
+      "quantization": "Q8_0",
+      "parameters": "1.2B",
+      "loadMs": 5936,
+      "medianMs": 8183,
+      "p95Ms": 29456,
+      "validJson": [
+        8,
+        14
+      ],
+      "errors": [
+        1,
+        14
+      ],
+      "rightRequest": [
+        8,
+        11
+      ],
+      "modelCalledTool": [
+        0,
+        5
+      ],
+      "noRequestWhenNotAsked": [
+        5,
+        6
+      ],
+      "injectionSafe": [
+        1,
+        1
+      ],
+      "speechCorrect": [
+        2,
+        3
+      ],
+      "banglaReplies": [
+        2,
+        4
+      ],
+      "citedSource": [
+        0,
+        2
+      ]
+    },
+    {
+      "model": "gemma2:2b",
+      "quantization": "Q4_0",
+      "parameters": "2.6B",
+      "loadMs": 7351,
+      "medianMs": 11590,
+      "p95Ms": 18333,
+      "validJson": [
+        13,
+        14
+      ],
+      "errors": [
+        0,
+        14
+      ],
+      "rightRequest": [
+        9,
+        11
+      ],
+      "modelCalledTool": [
+        1,
+        5
+      ],
+      "noRequestWhenNotAsked": [
+        6,
+        6
+      ],
+      "injectionSafe": [
+        1,
+        1
+      ],
+      "speechCorrect": [
+        2,
+        3
+      ],
+      "banglaReplies": [
+        3,
+        4
+      ],
+      "citedSource": [
+        1,
+        2
+      ]
+    },
+    {
+      "model": "deepseek-r1:1.5b",
+      "quantization": "Q4_K_M",
+      "parameters": "1.8B",
+      "loadMs": 13307,
+      "medianMs": 19527,
+      "p95Ms": 21640,
+      "validJson": [
+        0,
+        14
+      ],
+      "errors": [
+        11,
+        14
+      ],
+      "rightRequest": [
+        1,
+        11
+      ],
+      "modelCalledTool": [
+        0,
+        5
+      ],
+      "noRequestWhenNotAsked": [
+        1,
+        6
+      ],
+      "injectionSafe": [
+        0,
+        1
+      ],
+      "speechCorrect": [
+        0,
+        3
+      ],
+      "banglaReplies": [
+        1,
+        4
+      ],
+      "citedSource": [
+        0,
+        2
+      ]
+    }
+  ]
+}

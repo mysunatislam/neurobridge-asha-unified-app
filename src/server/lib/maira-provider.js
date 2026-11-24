@@ -20,6 +20,15 @@ const ROUTES = Object.freeze({
     envKey: "MAIRA_BILINGUAL_PROFILE_ID",
   },
 });
+// Public, non-secret routing facts (model registry and docs). Profile IDs stay private.
+export const MAIRA_ROUTES = Object.freeze(
+  Object.fromEntries(
+    Object.entries(ROUTES).map(([task, route]) => [
+      task,
+      Object.freeze({ name: route.name, model: route.model }),
+    ]),
+  ),
+);
 
 // Only fixed, public messages cross the API boundary. Never attach upstream
 // bodies, request headers, profile IDs, or raw network errors to this error.
@@ -177,6 +186,7 @@ export function createMairaProvider({
     language = "auto",
     module = "companion",
     signal,
+    timeoutMs = ASK_TIMEOUT_MS,
   } = {}) {
     const started = now();
     if (signal?.aborted) throw cancelled();
@@ -249,7 +259,7 @@ export function createMairaProvider({
           },
         }),
       },
-      ASK_TIMEOUT_MS,
+      Math.max(1000, Math.min(ASK_TIMEOUT_MS, Number(timeoutMs) || ASK_TIMEOUT_MS)),
       signal,
     );
     const text = data?.detail?.response ?? data?.response ?? data?.answer;
@@ -276,5 +286,10 @@ export function createMairaProvider({
     profiles().catch(() => {});
   }
 
-  return { ask, warm };
+  return {
+    ask,
+    warm,
+    configured: () => Boolean(env.MAIRA_API_KEY && env.MAIRA_PROJECT_KEY),
+    kind: "maira",
+  };
 }

@@ -1,0 +1,306 @@
+{
+  "name": "ASHA caregiver escalation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "asha-request",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "9b7769a9-a3ff-5df6-8ade-03bc13693ead",
+      "name": "New confirmed request",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "e0e548ad-2b13-5f17-80e7-3df0a6bf86a9"
+    },
+    {
+      "parameters": {
+        "action": "hmac",
+        "type": "SHA256",
+        "value": "={{ $json.headers['x-asha-timestamp'] }}.request.created.{{ $json.body.requestId }}.{{ $json.body.patientId }}.{{ $json.body.kind }}",
+        "dataPropertyName": "expectedSignature",
+        "secret": "={{ $env.ASHA_WORKFLOW_SECRET }}",
+        "encoding": "hex"
+      },
+      "id": "dc13b106-11bb-5477-b58d-60936f363983",
+      "name": "Expected signature",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 1,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Reject anything ASHA did not sign, or that is older than five minutes.\nreturn $input.all().map((item) => {\n  const headers = item.json.headers || {};\n  const ts = Number(headers['x-asha-timestamp']);\n  if (!item.json.expectedSignature || item.json.expectedSignature !== headers['x-asha-signature'])\n    throw new Error('Unsigned ASHA webhook');\n  if (!(Math.abs(Date.now() - ts) < 5 * 60 * 1000)) throw new Error('Stale ASHA webhook');\n  const { patientId, requestId, kind } = item.json.body || {};\n  return { json: { patientId, requestId, kind } };\n});"
+      },
+      "id": "de66beb6-545d-5de0-b7eb-8b03dc15b783",
+      "name": "Verify signature",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": "={{ Number($env.ASHA_ESCALATE_AFTER_SECONDS || 300) }}",
+        "unit": "seconds"
+      },
+      "id": "ff10760c-0af2-57fd-b5c8-bf381ba7825e",
+      "name": "Give the caregiver time",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        0
+      ],
+      "webhookId": "80cfd6ec-c97d-53ae-9429-964a2a99e3ab"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Sign the callback: timestamp.action.requestId.patientId\nreturn $input.all().map((item) => {\n  const ts = String(Date.now());\n  const action = 'status';\n  return { json: { ...item.json, action, ts, canonical: [ts, action, item.json.requestId, item.json.patientId].join('.') } };\n});"
+      },
+      "id": "2d482a28-4e0c-5d94-9a80-a7678099decb",
+      "name": "Prepare status check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "action": "hmac",
+        "type": "SHA256",
+        "value": "={{ $json.canonical }}",
+        "dataPropertyName": "signature",
+        "secret": "={{ $env.ASHA_WORKFLOW_SECRET }}",
+        "encoding": "hex"
+      },
+      "id": "1f8004a7-15d9-57c1-bd5f-c34891c6ca8f",
+      "name": "Sign status check",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ASHA_BASE_URL }}/api/workflow",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-asha-timestamp",
+              "value": "={{ $json.ts }}"
+            },
+            {
+              "name": "x-asha-signature",
+              "value": "={{ $json.signature }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ action: $json.action, patientId: $json.patientId, requestId: $json.requestId }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "7d5098c4-dcb3-508e-b39a-903dd9e9d214",
+      "name": "Ask ASHA if acknowledged",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Only requests nobody has acknowledged go on to a reminder.\nreturn $input.all()\n  .filter((item) => item.json.acknowledged === false)\n  .map((item) => {\n    const ts = String(Date.now());\n    const action = 'escalate';\n    return { json: { patientId: item.json.patientId, requestId: item.json.requestId, action, ts, canonical: [ts, action, item.json.requestId, item.json.patientId].join('.') } };\n  });"
+      },
+      "id": "689f3b5f-9800-5754-8e32-06bf40cadbf8",
+      "name": "Still waiting?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "action": "hmac",
+        "type": "SHA256",
+        "value": "={{ $json.canonical }}",
+        "dataPropertyName": "signature",
+        "secret": "={{ $env.ASHA_WORKFLOW_SECRET }}",
+        "encoding": "hex"
+      },
+      "id": "352acaee-0de6-5558-b0e0-40694c1499d1",
+      "name": "Sign reminder",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ASHA_BASE_URL }}/api/workflow",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-asha-timestamp",
+              "value": "={{ $json.ts }}"
+            },
+            {
+              "name": "x-asha-signature",
+              "value": "={{ $json.signature }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ action: $json.action, patientId: $json.patientId, requestId: $json.requestId }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "6135e89d-699d-521b-8dee-0406206f6531",
+      "name": "Remind the caregiver",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1980,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "New confirmed request": {
+      "main": [
+        [
+          {
+            "node": "Expected signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expected signature": {
+      "main": [
+        [
+          {
+            "node": "Verify signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify signature": {
+      "main": [
+        [
+          {
+            "node": "Give the caregiver time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Give the caregiver time": {
+      "main": [
+        [
+          {
+            "node": "Prepare status check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare status check": {
+      "main": [
+        [
+          {
+            "node": "Sign status check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sign status check": {
+      "main": [
+        [
+          {
+            "node": "Ask ASHA if acknowledged",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask ASHA if acknowledged": {
+      "main": [
+        [
+          {
+            "node": "Still waiting?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Still waiting?": {
+      "main": [
+        [
+          {
+            "node": "Sign reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sign reminder": {
+      "main": [
+        [
+          {
+            "node": "Remind the caregiver",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "active": false,
+  "meta": {
+    "description": "When a patient confirms a request in ASHA, wait, check whether the caregiver acknowledged it, and if not send the caregiver a reminder. Signed with HMAC-SHA256 both ways; carries ids and the request kind only."
+  }
+}

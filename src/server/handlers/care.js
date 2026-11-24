@@ -8,10 +8,10 @@ import {
 } from "../lib/common.js";
 import { clean } from "../lib/logic.js";
 import { evaluateSafety, safetyMessage } from "../../../public/app/everyday/safety.js";
-import { createMairaProvider } from "../lib/maira-provider.js";
+import { createLlmProvider } from "../lib/llm-provider.js";
 import { createCareService } from "../lib/care-service.js";
 
-const care = createCareService(createMairaProvider());
+const care = createCareService(createLlmProvider());
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
   if (!begin(req, res)) return;

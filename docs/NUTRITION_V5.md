@@ -20,6 +20,7 @@ Dashboard route: `/dashboard/patient/nutrition` (Wellbeing › Nutrition, and a 
 | Estimate | Meal total with its status, per-food cards (energy, protein, fat, carbohydrate, fibre, sodium, each "unknown" where not known, with the reason), "Where these numbers come from" (record, FDC link, data version, verification status, your share of the pot), "What ASHA assumed", and optional storage tips. |
 | Energy you ate | Shown only after the person says how much of each food they ate (all, most, half, a little, none, or "I ate all of it"). Logging needs this answer, so a log never says "you ate X" unconfirmed. |
 | Log | Written once (double taps and retries can't write twice), on this device only, with every canonical field, source id and answer. No photo is stored. Export as JSON, delete one, or delete all from the meal log. |
+| Last 7 days | A bar per local calendar day above the meal log: dark to the lowest estimate of energy eaten, light up to the highest. A day with an "at least" meal gets a dashed top, and a meal without an energy estimate is listed as unknown in the tooltip, never added as zero (`src/features/nutrition/week.js`, Recharts, 4 tests). Drawn from the local log only. |
 | Ask ASHA about this meal | Opens Talk to Asha with a question about this estimate typed in. Nothing is sent until the person presses Send, and the existing cloud consent applies. |
 
 ## Questions by food

@@ -253,3 +253,29 @@ export function retrieveKnowledge({
     }),
   );
 }
+
+/**
+ * Bilingual query rewriting for the hybrid index: Bangla and colloquial words
+ * map to the canonical English terms of the curated lexicon above, so an
+ * English embedder and full-text index can match them. Raw terms are kept
+ * for the eval's ablation.
+ */
+export function rewriteQuery(query) {
+  if (typeof query !== "string")
+    return { terms: [], rawTerms: [], rewrites: [] };
+  const words = (
+    query
+      .slice(0, MAX_QUERY)
+      .normalize("NFC")
+      .toLowerCase()
+      .match(/[\p{L}\p{M}\p{N}]+/gu) || []
+  ).filter((word) => !STOP.has(word));
+  const rewrites = words
+    .filter((word) => canonical.has(word) && canonical.get(word) !== word)
+    .map((word) => [word, canonical.get(word)]);
+  return {
+    terms: [...new Set(words.map((word) => canonical.get(word) || word))],
+    rawTerms: [...new Set(words)],
+    rewrites,
+  };
+}

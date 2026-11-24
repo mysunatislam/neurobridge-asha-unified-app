@@ -1,0 +1,28 @@
+{
+  "note": "Contextual retrieval (Anthropic-style): one short context per semantic chunk, prepended to the chunk before embedding and full-text indexing. Written by Claude (through Claude Code) from the whole guide, answering the prompt below, on 2026-11-18. Contexts use the guides' own wording; the writer had seen the retrieval eval questions, so treat eval gains as indicative.",
+  "prompt": "Here is a whole ASHA app guide and one chunk of it. Give a short, succinct context that situates this chunk within the overall guide, to improve search retrieval of the chunk. Answer only with the context.",
+  "generatedBy": "Claude via Claude Code",
+  "corpusVersion": "3b618589e5fbfe47",
+  "contexts": {
+    "guide:assessment#1-1": "Opening of the capability assessment guide: which communication module ASHA recommends for each remaining ability (hands and fingers, eyes, lips and head, speech).",
+    "guide:assessment#2-4": "From the capability assessment guide: no assessment result locks a module, what blind and hearing-impaired users need, and the fallback when no gesture can be captured.",
+    "guide:caregiver#1-3": "From the caregiver guide: opening the private caregiver link on a second phone, seeing and acknowledging patient requests, and what the sent, received and acknowledged statuses mean.",
+    "guide:caregiver#4-5": "From the caregiver guide: optional push notifications, the iPhone Home Screen requirement, and keeping the dashboard open for live updates.",
+    "guide:caregiver#6-6": "From the caregiver guide: a limit on the patient phone, where camera sensing stops when the browser is in the background or the phone is locked.",
+    "guide:companion#1-6": "From the Asha companion guide: how the caregiver starts support on the patient phone, how Asha introduces pages and checks in about every two minutes, and how a calibrated response proposes a request that a separate confirmation sends to the caregiver.",
+    "guide:companion#7-9": "From the Asha companion guide: its safety rules, that ordinary blinks never start or confirm a request, the app places no telephone calls, and delivery is announced only after a verified receipt.",
+    "guide:facespeak#1-3": "From the FaceSpeak guide: calibrating the patient's neutral face and movements, and eye-only communication with a rapid triple blink that proposes the offered need and a slower deliberate yes blink.",
+    "guide:facespeak#4-6": "From the FaceSpeak guide: how a proposed request is confirmed, with Asha asking aloud and the patient answering with a separate deliberate blink; ordinary blinks never send.",
+    "guide:facespeak#7-10": "From the FaceSpeak guide: why independent confirmation is needed, the head and smile responses for water, food and toilet, and that movement scores are not clinical measures.",
+    "guide:facespeak#11-11": "From the FaceSpeak guide: sustained face changes only prompt a question, never an automatic request or a diagnosis.",
+    "guide:fingerspeak#1-3": "From the FingerSpeak guide: both hands are tracked, and a personal hand pose and its meaning are learned by holding, relaxing and repeating three times, then used to propose and confirm a request.",
+    "guide:fingerspeak#4-5": "From the FingerSpeak guide: no hand assessment blocks the module, and what to suggest when no usable hand gesture is captured.",
+    "guide:posture#1-4": "From the posture guide: camera pose estimation that needs the shoulders and uses the hips, the optional YOLO second estimate, and the comfort check-in after a minute of sustained posture change.",
+    "guide:posture#5-5": "From the posture guide: how a possible wake pattern is recognised from closed or open eyes and body movement, and that it is not a sleep-stage classifier.",
+    "guide:senseassist#1-2": "From the SenseAssist guide: its two uses, phrase practice and clarification of heard words, with editable browser transcripts and AI-proposed candidate wording.",
+    "guide:senseassist#3-5": "From the SenseAssist guide: the speaker must confirm the wording, confirmed words can be spoken or sent to the caregiver, and transcripts are not a diagnosis or a phoneme score.",
+    "guide:vitalsense#1-4": "From the VitalSense guide: how the camera samples colour on the forehead and cheeks for experimental pulse and breathing estimates, which readings are rejected, and the 30-second resting calibration.",
+    "guide:vitalsense#5-5": "From the VitalSense guide: what the Details screen shows, the waveform, the session trend and the CSV reading log, and why optical HRV may be withheld.",
+    "guide:vitalsense#6-7": "From the VitalSense guide: its limits, that it cannot measure blood pressure, oxygen saturation or temperature, does not trigger emergencies, and is not for health decisions."
+  }
+}

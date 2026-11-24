@@ -24,12 +24,13 @@ export const hero = {
   primary: { label: "Try Asha", href: site.appUrl },
   secondary: { label: "Book a guided demo", href: "#contact" },
   video: {
-    // Add the demo video URL here when it is ready, e.g. "/videos/asha-demo.mp4".
+    // The final Asha film, played in YouTube's player inside the hero frame.
     src: "",
+    youtubeId: "DjKs46e9W8g",
     poster: undefined,
     posterAlt: "Asha companion demo",
     label: "Watch the demo",
-    duration: "",
+    duration: "The Asha film, on YouTube",
   },
 };
 
@@ -202,7 +203,7 @@ export const closing = {
 export const footer = {
   tagline: "Care that understands beyond words.",
   groups: [
-    { title: "Product", links: [{ label: "Try Asha", href: site.appUrl }, { label: "Modules", href: "#modules" }, { label: "Hardware kit", href: "#kit" }, { label: "Plans", href: "#plans" }] },
+    { title: "Product", links: [{ label: "Try Asha", href: site.appUrl }, { label: "Modules", href: "#modules" }, { label: "Hardware kit", href: "#kit" }, { label: "Plans", href: "#plans" }, { label: "How Asha uses AI", href: "/ai" }] },
     { title: "Company", links: [{ label: "Why Asha", href: "#why" }, { label: "Team", href: "#team" }, { label: "Contact", href: "#contact" }] },
     { title: "Connect", links: [{ label: "Email", href: "mailto:mysunatislam@gmail.com" }, { label: "WhatsApp", href: "https://wa.me/8801641576801" }, { label: "Source", href: site.sourceUrl }] },
   ],

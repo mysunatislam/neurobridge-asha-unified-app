@@ -10,6 +10,19 @@ export const store =
     ? supabaseStore
     : blobStore;
 export const base = (id) => `asha-live/v1/${id}`;
+/**
+ * Hosts of a tunnel to a local development server, e.g. a Cloudflare quick
+ * tunnel used to try the offline (Ollama) build from a phone. Comma-separated
+ * in ASHA_DEV_ORIGINS; honoured only with LOCAL_DEV=1 outside production.
+ */
+export function devTunnelOrigin(origin, env = process.env) {
+  if (env.LOCAL_DEV !== "1" || env.NODE_ENV === "production") return false;
+  return String(env.ASHA_DEV_ORIGINS || "")
+    .split(",")
+    .map((host) => host.trim().toLowerCase())
+    .filter((host) => /^[a-z0-9.-]+$/.test(host))
+    .some((host) => origin === `https://${host}`);
+}
 export const path = (id, file) => `${base(id)}/${file}.json`;
 export function begin(req, res) {
   res.setHeader("Cache-Control", "no-store");
@@ -32,7 +45,10 @@ export function begin(req, res) {
       "https://neurobridge-asha-live.vercel.app",
       `https://${process.env.VERCEL_URL}`,
     ].includes(origin) &&
-    !(process.env.LOCAL_DEV === "1" && /^http:\/\/127.0.0.1:\d+$/.test(origin))
+    !(
+      process.env.LOCAL_DEV === "1" && /^http:\/\/127.0.0.1:\d+$/.test(origin)
+    ) &&
+    !devTunnelOrigin(origin)
   ) {
     res.status(403).json({ error: "Origin not allowed" });
     return false;

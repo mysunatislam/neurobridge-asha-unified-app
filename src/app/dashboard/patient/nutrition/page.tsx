@@ -18,6 +18,7 @@ import { NutritionFlow } from "@/features/nutrition/state.js";
 import { nutritionStore, useNutrition, type MealLog } from "@/features/nutrition/store";
 import type { Answer, Capture, Item, Meal, Question, Suggestion, Text, VisionResult } from "@/features/nutrition/types";
 import { useFoodVision } from "@/features/nutrition/useFoodVision";
+import { WeekChart } from "@/features/nutrition/WeekChart";
 import { cn } from "@/lib/cn";
 
 type Screen = string;
@@ -977,6 +978,8 @@ function MealHistory({ log, lang }: { log: MealLog[]; lang: string }) {
       {log.length === 0 ? (
         <p className="mt-2 text-sm text-muted">{tx(lang, "Nothing logged yet.", "এখনো কিছু লেখা হয়নি।")}</p>
       ) : (
+        <>
+        <WeekChart log={log} lang={lang} />
         <ul className="mt-3 divide-y divide-line">
           {[...log].reverse().slice(0, 20).map((m) => (
             <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 py-2" data-testid="nutrition-log-entry">
@@ -992,6 +995,7 @@ function MealHistory({ log, lang }: { log: MealLog[]; lang: string }) {
             </li>
           ))}
         </ul>
+        </>
       )}
     </section>
   );
