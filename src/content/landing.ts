@@ -24,12 +24,13 @@ export const hero = {
   primary: { label: "Try Asha", href: site.appUrl },
   secondary: { label: "Book a guided demo", href: "#contact" },
   video: {
-    // Add the demo video URL here when it is ready, e.g. "/videos/asha-demo.mp4".
+    // The final Asha film, played in YouTube's player inside the hero frame.
     src: "",
+    youtubeId: "DjKs46e9W8g",
     poster: undefined,
     posterAlt: "Asha companion demo",
     label: "Watch the demo",
-    duration: "",
+    duration: "The Asha film, on YouTube",
   },
 };
 
