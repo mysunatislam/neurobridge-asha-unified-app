@@ -92,7 +92,7 @@ async function lookAt(locator, settleMs = 900) {
   await locator.page().waitForTimeout(settleMs);
 }
 /** Close both eyes for `ms`, then open them again. */
-async function slowBlink(page, ms = 650) {
+async function slowBlink(page, ms = 950) {
   await page.evaluate((ms) => (window.__closedUntil = performance.now() + ms), ms);
   await page.waitForTimeout(ms + 300);
 }
@@ -157,12 +157,13 @@ async function calibrate(page) {
   await page.locator('[data-tile="yes"]').evaluate((el) => {
     const r = el.getBoundingClientRect();
     window.__look = { x: (r.left + r.width / 2) / innerWidth, y: (r.top + r.height / 2) / innerHeight };
-    window.__closedUntil = performance.now() + 250 + 550;
+    window.__closedUntil = performance.now() + 250 + 900;
     window.__closedFrom = performance.now() + 250;
   });
   await page.waitForTimeout(1200);
   assert.equal(await board.getAttribute("data-chosen-by"), null, "a blink during a glance chose nothing");
-  await page.waitForTimeout(1500);
+  // A 0.9 s closure is longer than the board's 0.6 s loss limit, so the fill starts again after it.
+  await page.waitForTimeout(2000);
   assert.equal(await board.getAttribute("data-chosen-by"), "dwell", "the fill still works");
   await page.getByTestId("board-note").getByText("Said: Yes").waitFor();
   await page.locator('[data-tile="thanks"]').evaluate((el) => {
@@ -171,7 +172,7 @@ async function calibrate(page) {
   });
   const lookedAt = Date.now();
   await page.waitForTimeout(900);
-  await slowBlink(page, 550);
+  await slowBlink(page, 800);
   await page.getByTestId("board-note").getByText("Said: Thank you · Yes").waitFor({ timeout: 3000 });
   const chosenMs = Date.now() - lookedAt;
   assert.equal(await board.getAttribute("data-chosen-by"), "blink", "chosen by the slow blink, not the fill");

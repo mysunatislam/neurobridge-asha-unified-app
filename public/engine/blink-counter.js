@@ -5,6 +5,7 @@ const median = (values) => {
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 };
+export const REOPEN_WITHIN = 0.35;
 export class BlinkCounter {
   constructor() {
     this.total = 0;
@@ -120,9 +121,13 @@ export class BlinkCounter {
       this.resetCycle();
       return this.snapshot(t, "Sustained closure is not a completed blink");
     }
+    // Reopened once each eye is back within 35% of its dip. On 469 labelled blinks in public
+    // videos (Eyeblink8, TalkingFace), the old 20% missed blinks whose eyes reopened slowly:
+    // recall went from 78% to 88% held out, with precision 95-98% either way
+    // (docs/validation/PUBLIC_DATA_VALIDATION.md).
     const recovered =
-      f.earLeft >= c.left - (c.left - c.minLeft) * 0.2 &&
-      f.earRight >= c.right - (c.right - c.minRight) * 0.2;
+      f.earLeft >= c.left - (c.left - c.minLeft) * REOPEN_WITHIN &&
+      f.earRight >= c.right - (c.right - c.minRight) * REOPEN_WITHIN;
     if (recovered) {
       c.opening ??= t;
       c.returns++;

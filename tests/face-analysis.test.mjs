@@ -248,3 +248,15 @@ test("blink, smile and head temporal defaults are preserved", () => {
   assert.equal(NF_engine.DEFAULTS.blink.deliberateMinMs, 260);
   assert.equal(NF_engine.baseline().leftTurnEnterThreshold, 13);
 });
+test("a turned head is not a lip stretch: the nose's sideways move with yaw is taken out (docs/validation)", () => {
+  const a = calibrated(),
+    turned = mesh();
+  // 10° of yaw moves the nose tip about 0.35 × sin(10°) face widths against the mouth.
+  turned[1].x -= 0.35 * Math.sin((10 * Math.PI) / 180) * 0.4;
+  let s = a.update(turned, raw({ yaw: 10 }), result(), baseline, 2000);
+  assert.ok(Math.abs(s.lip.lateral) < 0.005, `lateral ${s.lip.lateral}`);
+  assert.equal(s.lip.active, false);
+  // The same picture with the head facing forward is a real sideways pull of the lips.
+  s = a.update(turned, raw({ yaw: 0 }), result(), baseline, 2100);
+  assert.equal(s.lip.active, true);
+});

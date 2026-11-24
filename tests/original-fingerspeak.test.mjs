@@ -148,3 +148,39 @@ test("built-in pose preview recognizes simple shapes after a short stable hold",
   assert.equal(tracker.update(hands, 200)[0].pose, "Open palm");
   assert.equal(tracker.update([], 250).length, 0);
 });
+
+// A finger bent by `bend` radians at each of its two middle joints (0 = straight).
+function bentHand(bends) {
+  const lm = hand(0, [1, 1, 1, 1]).map((p) => ({ ...p }));
+  [
+    [5, 6, 7, 8],
+    [9, 10, 11, 12],
+    [13, 14, 15, 16],
+    [17, 18, 19, 20],
+  ].forEach((chain, i) => {
+    let { x, y } = lm[chain[0]], dir = -Math.PI / 2;
+    chain.slice(1).forEach((index, j) => {
+      if (j > 0) dir += bends[i];
+      x += Math.cos(dir) * 0.1;
+      y += Math.sin(dir) * 0.1;
+      lm[index] = { x, y, z: 0 };
+    });
+  });
+  return lm;
+}
+
+test("pose preview: limits from the public-data validation (docs/validation)", () => {
+  // A loosely folded little finger (about 50 on the openness scale) still counts as folded.
+  const loose = bentHand([0, 0, Math.PI, 0.98]);
+  const openness = classifyPose(loose).openness;
+  assert.ok(openness[4] > 30 && openness[4] < 60, `little finger openness ${openness[4]}`);
+  assert.equal(classifyPose(loose).name, "Two fingers extended");
+  // Between the two limits the finger is undecided, so no pose is named.
+  const half = bentHand([0, 0, Math.PI, 0.7]);
+  const o = classifyPose(half).openness[4];
+  assert.ok(o > 60 && o < 80, `little finger openness ${o}`);
+  assert.equal(classifyPose(half).name, "Other hand pose");
+  // Middle, ring and little finger is also three fingers.
+  assert.equal(classifyPose(hand(0, [0, 1, 1, 1])).name, "Three fingers extended");
+  assert.equal(classifyPose(hand(0, [1, 1, 1, 0])).name, "Three fingers extended");
+});

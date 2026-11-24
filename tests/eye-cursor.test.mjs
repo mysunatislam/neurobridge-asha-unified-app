@@ -30,15 +30,21 @@ test("eye openness is the lid gap over the eye width, from the face points", () 
 
 test("a slow blink clicks; natural blinks and resting the eyes do not", () => {
   const b = new LongBlink();
-  const events = run(b, [["open", 1500], ["closed", 150], ["open", 800], ["closed", 250], ["open", 800], ["closed", 600], ["open", 800], ["closed", 3000], ["open", 500]]);
+  const events = run(b, [["open", 1500], ["closed", 150], ["open", 800], ["closed", 250], ["open", 800], ["closed", 900], ["open", 800], ["closed", 3000], ["open", 500]]);
   assert.deepEqual(events.map((e) => e.kind), ["short", "short", "click", "long"]);
   const click = events.find((e) => e.kind === "click");
-  assert.ok(click.ms >= 560 && click.ms <= 640, `measured ${click.ms} ms`);
+  assert.ok(click.ms >= 860 && click.ms <= 940, `measured ${click.ms} ms`);
+});
+
+test("a long natural blink (0.4 to 0.7 s) is not a click (public-data validation)", () => {
+  const b = new LongBlink();
+  const events = run(b, [["open", 1500], ["closed", 450], ["open", 800], ["closed", 600], ["open", 800]]);
+  assert.deepEqual(events.map((e) => e.kind), ["short", "short"]);
 });
 
 test("a slow blink is still seen on a slow device (5 face results per second)", () => {
   const b = new LongBlink();
-  const events = run(b, [["open", 2000], ["closed", 200], ["open", 1000], ["closed", 700], ["open", 600]], 200);
+  const events = run(b, [["open", 2000], ["closed", 200], ["open", 1000], ["closed", 1000], ["open", 600]], 200);
   assert.deepEqual(events.map((e) => e.kind), ["short", "click"]);
 });
 

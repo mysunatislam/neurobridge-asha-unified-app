@@ -222,7 +222,7 @@ export function EyeCursor() {
           const at = pointBefore(trail, b.closedAt, { radius: steady });
           if (at && act(at, "blink")) return;
           else say("Your eyes were still moving, so nothing was clicked. Rest them on the button for a moment, then blink slowly.");
-        } else if (b.kind === "short" && b.ms >= 300) say("That blink was short, so nothing was clicked. Close your eyes for about half a second to click.");
+        } else if (b.kind === "short" && b.ms >= 500) say("That blink was short, so nothing was clicked. Close your eyes for about a second to click.");
       }
       const feat = extractGazeFeatures(f.face, f.videoSize.width, f.videoSize.height) as Features;
       if (!feat.valid) return lose(t, feat.reason);

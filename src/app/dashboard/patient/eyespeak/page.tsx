@@ -270,7 +270,7 @@ export default function EyeSpeakPage() {
           4. Use your eyes as a mouse
         </h2>
         <p className="mt-0.5 mb-3 text-sm text-muted">
-          A ring follows your gaze on every Asha page. Look at a button and blink slowly, with your eyes closed for about half a second, to click it. Normal blinks don’t click. When buttons are too close together for your accuracy, Asha shows them as big tiles to choose from.
+          A ring follows your gaze on every Asha page. Look at a button and blink slowly, with your eyes closed for about a second, to click it. Normal blinks don’t click. When buttons are too close together for your accuracy, Asha shows them as big tiles to choose from.
         </p>
         <Button
           onClick={() => eyeSpeakStore.set({ cursor: !es.cursor, cursorPaused: false })}

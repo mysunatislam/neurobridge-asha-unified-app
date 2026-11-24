@@ -183,3 +183,12 @@ test("observation snapshots never emit communication commands", () => {
     assert.ok(!snapshot.events || snapshot.events.length === 0);
   }
 });
+
+test("a blink whose eyes reopen slowly still counts (public-data validation)", () => {
+  // Open 0.50, dip to 0.30, then the eyes rest at 0.44 for a while before fully opening: back
+  // within 30% of the dip. The old 20% limit waited for full reopening and lost such blinks
+  // when the eyes did not quite return before the next one.
+  const r = runner();
+  r.hold(800, 0.5, 0.5).hold(120, 0.3, 0.3).hold(400, 0.44, 0.44);
+  assert.equal(r.counter.total, 1);
+});
