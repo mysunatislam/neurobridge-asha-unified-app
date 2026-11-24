@@ -21,10 +21,18 @@ const files = walk(DATA);
 const server = spawn(process.execPath, [path.join(here, "server.mjs")], { env: { ...process.env, VALIDATION_DATA: DATA }, stdio: ["ignore", "pipe", "inherit"] });
 await new Promise((ok) => server.stdout.once("data", ok));
 process.on("exit", () => server.kill());
-const detect = (mode, list, out) => new Promise((ok, no) => {
-  const c = spawn(process.execPath, [path.join(here, "run.mjs"), "face", mode, list, out], { stdio: "inherit" });
-  c.on("exit", (code) => (code === 0 ? ok() : no(new Error(`run.mjs exited ${code}`))));
+const count = (f) => (fs.existsSync(f) ? fs.readFileSync(f, "utf8").split("\n").filter(Boolean).length : 0);
+const pass = (mode, list, out) => new Promise((ok) => {
+  const c = spawn(process.execPath, [path.join(here, "run.mjs"), "face", mode, list, out], { stdio: "inherit", env: { ...process.env, MAX_LINES: process.env.MAX_LINES || "1200" } });
+  c.on("exit", (code) => ok(code));
 });
+// Detection runs in short passes (a fresh browser and Node process each), resuming each time, so
+// memory never builds up over a long video. Stops if two passes in a row add nothing.
+async function detect(mode, list, out) {
+  const total = count(list); let stuck = 0;
+  while (count(out) < total) { const before = count(out); const code = await pass(mode, list, out);
+    if (count(out) > before) stuck = 0; else if (++stuck >= 2) throw new Error(`run.mjs made no progress (exit ${code})`); }
+}
 
 // ---------- minimal MATLAB v5 reader, for screenSize.mat (named numeric scalars) ----------
 function readMat(buf) {

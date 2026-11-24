@@ -4,7 +4,11 @@ const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODUL
 process.on("unhandledRejection", (e) => console.error("unhandled", String(e)));
 const [kind, mode, list, outFile] = process.argv.slice(2);
 const lines = fs.readFileSync(list, "utf8").trim().split("\n");
-const done = fs.existsSync(outFile) ? fs.readFileSync(outFile, "utf8").trim().split("\n").filter(Boolean).length : 0;
+// Drop a half-written last line left by a crash, then resume after the complete ones.
+if (fs.existsSync(outFile)) { const t = fs.readFileSync(outFile, "utf8"); const cut = t.lastIndexOf("\n") + 1; if (cut < t.length) fs.truncateSync(outFile, Buffer.byteLength(t.slice(0, cut))); }
+const done = fs.existsSync(outFile) ? fs.readFileSync(outFile, "utf8").split("\n").filter(Boolean).length : 0;
+// One process handles at most MAX_LINES lines, then exits so memory starts fresh; callers loop until done.
+const stopAt = Math.min(lines.length, done + (+process.env.MAX_LINES || Infinity));
 const B = mode === "image" ? 20 : 60; const t0 = Date.now();
 let b, p;
 async function open() {
@@ -16,8 +20,8 @@ async function open() {
 const withTimeout = (pr, ms) => Promise.race([pr, new Promise((_, no) => setTimeout(() => no(new Error("timeout")), ms))]);
 await open();
 const out = fs.createWriteStream(outFile, { flags: "a" });
-for (let i = done - (done % 1); i < lines.length; i += B) {
-  const chunk = lines.slice(i, i + B).map((l) => l.split("\t"));
+for (let i = done; i < stopAt; i += B) {
+  const chunk = lines.slice(i, Math.min(i + B, stopAt)).map((l) => l.split("\t"));
   const urls = chunk.map((c) => c[0]);
   let res;
   for (let attempt = 0; attempt < 2 && !res; attempt++) {

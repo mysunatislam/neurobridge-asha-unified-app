@@ -12,7 +12,8 @@ window.init = async (kind, mode) => {
   make[key] = await (kind === "face" ? FaceLandmarker : HandLandmarker).createFromOptions(files, opts);
   return true;
 };
-const load = (src) => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => no(new Error("load " + src)); i.src = src; });
+// Frames are decoded to an ImageBitmap and closed after use, so long videos do not pile up decoded images.
+const load = async (src) => { const r = await fetch(src); if (!r.ok) throw new Error("load " + src); const b = await createImageBitmap(await r.blob()); b.naturalWidth = b.width; b.naturalHeight = b.height; return b; };
 const r4 = (n) => Math.round(n * 1e5) / 1e5;
 function pack(kind, res, w, h) {
   if (kind === "face") {
@@ -24,14 +25,14 @@ function pack(kind, res, w, h) {
 }
 window.runImages = async (kind, urls) => {
   await window.init(kind, "IMAGE"); const m = make[kind + "IMAGE"]; const out = [];
-  for (const u of urls) { try { const img = await load(u); const res = kind === "face" ? m.detect(img) : m.detect(img); out.push(pack(kind, res, img.naturalWidth, img.naturalHeight)); } catch (e) { out.push({ error: String(e) }); } }
+  for (const u of urls) { try { const img = await load(u); const res = kind === "face" ? m.detect(img) : m.detect(img); out.push(pack(kind, res, img.width, img.height)); img.close(); } catch (e) { out.push({ error: String(e) }); } }
   return out;
 };
 let vid = {};
 window.runVideo = async (kind, urls, times, reset) => {
   if (reset && make[kind + "VIDEO"]) { make[kind + "VIDEO"].close(); delete make[kind + "VIDEO"]; }
   await window.init(kind, "VIDEO"); const m = make[kind + "VIDEO"]; const out = [];
-  for (let i = 0; i < urls.length; i++) { const img = await load(urls[i]); const res = kind === "face" ? m.detectForVideo(img, times[i]) : m.detectForVideo(img, times[i]); out.push(pack(kind, res, img.naturalWidth, img.naturalHeight)); }
+  for (let i = 0; i < urls.length; i++) { const img = await load(urls[i]); const res = m.detectForVideo(img, times[i]); out.push(pack(kind, res, img.width, img.height)); img.close(); }
   return out;
 };
 window.ready = true;
