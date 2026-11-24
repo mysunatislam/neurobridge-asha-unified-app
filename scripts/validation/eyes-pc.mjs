@@ -127,7 +127,7 @@ async function blinkRun() {
   // Variants of the counter's limits, made by editing a copy of its source (the app file is unchanged).
   const variant = async ({ frac, abs, recover, lows }) => {
     let s = src.replaceAll("r.left * 0.08", `r.left * ${frac}`).replaceAll("r.right * 0.08", `r.right * ${frac}`).replaceAll("Math.max(0.018,", `Math.max(${abs},`)
-      .replaceAll("* 0.2 &&", `* ${recover} &&`).replace("c.minRight) * 0.2;", `c.minRight) * ${recover};`).replace("c.lows >= 2 && duration >= 65", `c.lows >= ${lows} && duration >= 65`);
+      .replace(/REOPEN_WITHIN = [\d.]+/, `REOPEN_WITHIN = ${recover}`).replace("c.lows >= 2 && duration >= 65", `c.lows >= ${lows} && duration >= 65`);
     const f = path.join(WORK, `bc-${frac}-${abs}-${recover}-${lows}.mjs`); fs.writeFileSync(f, s); return (await import(pathToFileURL(f).href)).BlinkCounter;
   };
   // Read each video's landmarks line by line and keep only what the blink detectors use (a full
@@ -159,6 +159,22 @@ async function blinkRun() {
   summary.blink = { videos: names.map((n) => ({ name: n, fps: data[n].fps, frames: data[n].pre.length, blinks: data[n].gt.length })), current: evalSet(names, null),
     sweep: counters.map(({ o, C }) => ({ ...o, ...(({ per, ...r }) => r)(evalSet(names, C)) })),
     crossValidated: { pickedOnEven: bA.o, heldOutOdd: evalSet(B, bA.C), currentOdd: evalSet(B, null), pickedOnOdd: bB.o, heldOutEven: evalSet(A, bB.C), currentEven: evalSet(A, null) } };
+  // Slow-blink click (eye cursor): every recording here is natural blinking, so each click is a
+  // false click. Measure how long natural closures last as LongBlink sees them, and the false
+  // click rate for longer minimum holds and a stricter "closed" level.
+  const lsrc = fs.readFileSync(path.join(here, "..", "..", "src", "features", "eyespeak", "cursor-logic.js"), "utf8");
+  const durations = [], clickGrid = [], mins = names.reduce((a, n) => a + data[n].pre.filter((x) => x.f.facePresent).length / data[n].fps / 60, 0);
+  for (const closed of [0.5, 0.4, 0.3]) {
+    const f = path.join(WORK, `bc-lb-${closed}.mjs`); fs.writeFileSync(f, lsrc.replace("openness < ref * 0.5", `openness < ref * ${closed}`));
+    const { LongBlink: LB } = await import(pathToFileURL(f).href);
+    for (const minMs of [400, 500, 600, 700, 800, 1000]) { let clicks = 0;
+      for (const n of names) { const d = data[n], lb = new LB({ minMs }); d.pre.forEach(({ o }, i) => { const e = lb.update(o, (i * 1000) / d.fps); if (e) { if (e.kind === "click") clicks++; if (closed === 0.5 && minMs === 400) durations.push(e.ms); } }); }
+      clickGrid.push({ closed, minMs, clicks, perMin: clicks / mins }); }
+  }
+  const { quantile } = await import(pathToFileURL(path.join(here, "lib", "stats.mjs")).href);
+  summary.blink.longBlink = { minutes: mins, closures: durations.length, closureMs: Object.fromEntries([0.5, 0.9, 0.95, 0.99].map((q) => [`p${q * 100}`, quantile(durations, q)])),
+    over: Object.fromEntries([400, 600, 800, 1000].map((m) => [m, durations.filter((x) => x >= m).length])), clickGrid };
+  console.log(JSON.stringify({ longBlink: summary.blink.longBlink }, null, 1));
   save(); for (const f of fs.readdirSync(WORK)) if (f.startsWith("bc-")) fs.rmSync(path.join(WORK, f));
   const brief = (r) => (({ per, sweep, ...x }) => x)(r);
   console.log(JSON.stringify({ blink: { videos: summary.blink.videos, current: summary.blink.current, crossValidated: Object.fromEntries(Object.entries(summary.blink.crossValidated).map(([k, v]) => [k, v.tp === undefined ? v : brief(v)])) } }, null, 1));
