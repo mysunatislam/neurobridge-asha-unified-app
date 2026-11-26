@@ -138,6 +138,25 @@ test("on Vercel the gateway needs no key: it uses the deployment's OIDC token, a
   assert.equal(createGatewayProvider({ env: {} }).configured(), false);
 });
 
+test("a MAIRA outage is skipped for a while so replies do not wait on it", async () => {
+  const { createLlmProvider } = await import("../src/server/lib/llm-provider.js");
+  let maira = 0;
+  const fetchImpl = async (url) => {
+    if (String(url).includes("gigalogy")) {
+      maira += 1;
+      return new Response("{}", { status: 503 });
+    }
+    return Response.json({ choices: [{ message: { content: '{"reply":"Backup reply.","source_ids":[]}' } }] });
+  };
+  const provider = createLlmProvider({ env: { MAIRA_API_KEY: "k", MAIRA_PROJECT_KEY: "p", GEMINI_API_KEY: "g" }, fetchImpl });
+  const o = createAshaOrchestrator({ provider, retrieve: () => [] });
+  assert.equal((await o.run({ patientId: "p", profile, text: "Hello" })).reply, "Backup reply.");
+  const after = maira;
+  assert.ok(after >= 1);
+  assert.equal((await o.run({ patientId: "p", profile, text: "Hello again" })).reply, "Backup reply.");
+  assert.equal(maira, after);
+});
+
 test("an exhausted gateway allowance still ends in a guide answer", async () => {
   const { createLlmProvider } = await import("../src/server/lib/llm-provider.js");
   const fetchImpl = async (url) =>

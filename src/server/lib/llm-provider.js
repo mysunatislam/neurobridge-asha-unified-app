@@ -17,25 +17,33 @@ const RETRY_LOCALLY = new Set([
 // missing MAIRA key included, since the backup has its own key).
 const RETRY_ON_GATEWAY = new Set([...RETRY_LOCALLY, "credentials_rejected", "model_unavailable", "invalid_response"]);
 
-// After MAIRA rejects its key, skip it for a while so each reply does not
-// wait on a call that is known to fail.
+// After MAIRA fails, skip it for a while so each reply does not wait on a call
+// that is likely to fail again: 10 minutes for a rejected key, 2 for an outage.
 const SKIP_REJECTED_MS = 10 * 60 * 1000;
+const SKIP_UNAVAILABLE_MS = 2 * 60 * 1000;
+const SKIP_UNAVAILABLE = new Set(["timeout", "connection_failed", "provider_unavailable", "profiles_unavailable"]);
+// With a backup ready, MAIRA gets a shorter wait so the backup still has time to answer.
+const MAIRA_MS_WITH_BACKUP = 10000;
 
-/** MAIRA first; Vercel AI Gateway (no key needed on Vercel) when MAIRA could not answer. */
+/** MAIRA first; the backup route (Gemini or Vercel AI Gateway) when MAIRA could not answer. */
 function withGatewayBackup(maira, gateway, now = Date.now) {
   if (!gateway.configured()) return maira;
-  let rejectedAt = -Infinity;
+  let skipUntil = -Infinity;
   return {
     kind: "maira",
     configured: () => true,
     warm: () => maira.warm(),
     async ask(request) {
-      if (!maira.configured() || now() - rejectedAt < SKIP_REJECTED_MS) return gateway.ask(request);
+      if (!maira.configured() || now() < skipUntil) return gateway.ask(request);
       try {
-        return await maira.ask(request);
+        const timeoutMs = Math.min(Number(request?.timeoutMs) || MAIRA_MS_WITH_BACKUP, MAIRA_MS_WITH_BACKUP);
+        return await maira.ask({ ...request, timeoutMs });
       } catch (error) {
         if (!RETRY_ON_GATEWAY.has(error?.code) || request?.signal?.aborted) throw error;
-        if (error?.code === "credentials_rejected") rejectedAt = now();
+        // Only the error code: no prompt, no key.
+        console.warn("maira failed, using backup", error?.code);
+        if (error?.code === "credentials_rejected") skipUntil = now() + SKIP_REJECTED_MS;
+        else if (SKIP_UNAVAILABLE.has(error?.code)) skipUntil = now() + SKIP_UNAVAILABLE_MS;
         return gateway.ask(request);
       }
     },
