@@ -200,11 +200,12 @@ export function searchFoods(query = "") {
 }
 
 /**
- * ASHA's on-device food recogniser: EfficientNetV2-B0 (ImageNet weights, Keras Applications, Apache-2.0)
- * with a classification head trained by ASHA on Open Images V7 photos (CC BY 2.0) and two Bangladeshi
- * food photo sets (BD-Food33, CC0; Bangladeshi Street Food, CC BY 4.0) for 65 foods plus "not food",
- * 31 of them Bangladeshi dishes. Held-out results with this int8 file: 82.7% top-1 on 456 Bangladeshi
- * photos and 75.9% on 4,951 Open Images photos (see docs/NUTRITION_PUBLIC_DATA_VALIDATION.md).
+ * ASHA's on-device food recogniser: DINOv2-small (Meta, Apache-2.0; int8 ONNX) with a classification
+ * head trained by ASHA on Open Images V7 photos (CC BY 2.0) and two Bangladeshi food photo sets
+ * (BD-Food33, CC0; Bangladeshi Street Food, CC BY 4.0) for 65 foods plus "not food", 31 of them
+ * Bangladeshi dishes. Held-out results with this int8 file: 97.1% top-1 on 456 Bangladeshi photos and
+ * 82.4% on 4,951 Open Images photos (see docs/NUTRITION_PUBLIC_DATA_VALIDATION.md). It replaced an
+ * EfficientNetV2-B0 version (82.7% / 75.9%) on 2026-11-26; the file is 24.6 MB instead of 7.2 MB.
  * Public-photo accuracy is not clinical validation.
  *
  * Only the model's single best guess can become a suggestion, and only when it reaches that food's
@@ -215,12 +216,12 @@ export function searchFoods(query = "") {
  * numbers until the person picks them.
  */
 export const FOOD_VISION = Object.freeze({
-  modelId: "asha/food-effv2b0-oi-bd66-int8",
-  modelVersion: "2026-11-20",
-  sha256: "5c30468434d0c8efa3b8f886d84a59692cfa66472ada14dd91abaa536044ef53",
-  bytes: 7162275,
-  url: "/models/asha-food-66-int8.onnx",
-  license: "Backbone Apache-2.0 (Keras Applications EfficientNetV2-B0); head trained by ASHA on Open Images V7 (CC BY 2.0 images, CC BY 4.0 labels), BD-Food33 (CC0) and Bangladeshi Street Food (CC BY 4.0)",
+  modelId: "asha/food-dinov2s-oi-bd66-int8",
+  modelVersion: "2026-11-26",
+  sha256: "f9c0d2c691f96cd64eb61a226dfea469f0100f272a11b5090d6f7e18d69a7bb8",
+  bytes: 24577140,
+  url: "/models/asha-food-dinov2s-66-int8.onnx",
+  license: "Backbone Apache-2.0 (Meta DINOv2-small, int8 ONNX from Xenova/dinov2-small); head trained by ASHA on Open Images V7 (CC BY 2.0 images, CC BY 4.0 labels), BD-Food33 (CC0) and Bangladeshi Street Food (CC BY 4.0)",
   experimental: true,
   input: Object.freeze({ size: 224, layout: "NHWC", range: "0-255 RGB" }),
   // A best guess below this is not shown at all.
@@ -231,9 +232,11 @@ export const FOOD_VISION = Object.freeze({
   dishFor: Object.freeze({ apple: "apple", banana: "banana", strawberry: "strawberries", rice: "rice", orange: "orange", pear: "pear", peach: "peach", pomegranate: "pomegranate", tomato: "tomato", dal: "dal", fish_curry: "fish_curry" }),
   // Lowest score at which the camera fills a food in by itself. Chosen on held-out photos from the
   // training side only, as the lowest score (0.5 and up) where at least 90% of fills were right
-  // (scripts/public-data-validation/nutrition/bd_fill_thresholds.py). Orange never got there (it is
-  // mixed up with grapefruit/pomelo and lemon), so it is named but never filled in.
-  fillMin: Object.freeze({ apple: 0.75, banana: 0.5, strawberry: 0.5, rice: 0.85, pear: 0.5, peach: 0.9, pomegranate: 0.5, tomato: 0.6, dal: 0.5, fish_curry: 0.5 }),
+  // (scripts/public-data-validation/nutrition/bd_fill_thresholds.py, BACKBONE=dino). Orange never got
+  // there (it is mixed up with grapefruit/pomelo and lemon), and neither did rice with this model (Open
+  // Images "rice" photos are often rice with curry), so both are named and offered as "+ add", never
+  // filled in by themselves.
+  fillMin: Object.freeze({ apple: 0.5, banana: 0.5, strawberry: 0.5, pear: 0.5, peach: 0.65, pomegranate: 0.5, tomato: 0.5, dal: 0.5, fish_curry: 0.5 }),
   labels: Object.freeze({
     apple: { en: "Apple", bn: "আপেল" }, banana: { en: "Banana", bn: "কলা" }, bell_pepper: { en: "Bell pepper (capsicum)", bn: "ক্যাপসিকাম" },
     bread: { en: "Bread", bn: "পাউরুটি" }, cabbage: { en: "Cabbage", bn: "বাঁধাকপি" }, cake: { en: "Cake", bn: "কেক" }, carrot: { en: "Carrot", bn: "গাজর" },

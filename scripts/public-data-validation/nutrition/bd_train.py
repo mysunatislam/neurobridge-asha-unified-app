@@ -1,12 +1,13 @@
+# Same as bd_train.py, but for any backbone's embeddings (BACKBONE=dino uses dino_feats.py output).
 # Trains the food head on Open Images train + Bangladeshi train photos (same EfficientNetV2-B0
 # embeddings), picks C on held-out scenes from the training side only, and reports Open Images test
 # and Bangladeshi test results for the old 35-class head and the new head.
-import json, sys, pickle, collections, numpy as np
+import json, os, sys, pickle, collections, numpy as np
 sys.path.insert(0, '/tmp/w/nut')
 from evalcore import parse, report
 from sklearn.linear_model import LogisticRegression
-meta = json.load(open('/tmp/w/nut/cls_effl0.json')); E = np.load('/tmp/w/nut/emb_effv2b0.npy')
-bd = json.load(open('/tmp/w/nut/bd/bd_meta.json')); EB = np.load('/tmp/w/nut/bd/emb_bd_effv2b0.npy')
+meta = json.load(open('/tmp/w/nut/cls_effl0.json')); E = np.load(os.environ.get('EMB_OI', '/tmp/w/nut/emb_effv2b0.npy'))
+bd = json.load(open('/tmp/w/nut/bd/bd_meta.json')); EB = np.load(os.environ.get('EMB_BD', '/tmp/w/nut/bd/emb_bd_effv2b0.npy'))
 old, old_classes = pickle.load(open('/tmp/w/nut/head_effv2b0.pkl', 'rb'))
 sp = [parse(m['key'])[0] for m in meta]; cl = [parse(m['key'])[2] for m in meta]
 bd_classes = sorted({b['cls'] for b in bd if b['split'] != 'dropped'})
@@ -42,26 +43,29 @@ for C in [2, 8, 32]:
         if not best or score > best[0]: best = (score, C, boost)
 _, C, boost = best; print('chosen C', C, 'boost', boost)
 m = fit(oi_tr, bd_tr, C, boost)
-pickle.dump((m, classes), open('/tmp/w/nut/head_effv2b0_bd.pkl', 'wb'))
+pickle.dump((m, classes), open(os.environ.get('HEAD_OUT', '/tmp/w/nut/head_effv2b0_bd.pkl'), 'wb'))
 out = {'C': C, 'bd_boost': boost, 'classes': classes}
 # Open Images test, old vs new
 yo = np.array([ci[cl[i]] for i in oi_te])
 out['oi_new'] = report(yo, m.predict_proba(E[oi_te]), classes, 'oi_new')
 oci = {c: k for k, c in enumerate(old_classes)}
-out['oi_old'] = report(np.array([oci[cl[i]] for i in oi_te]), old.predict_proba(E[oi_te]), old_classes, 'oi_old')
+out['oi_old'] = None if os.environ.get('EMB_OI') else report(np.array([oci[cl[i]] for i in oi_te]), old.predict_proba(E[oi_te]), old_classes, 'oi_old')
 # Bangladeshi test: new head, and old head (which can only be right on classes it has)
 yb = np.array([ci[bd[i]['cls']] for i in bd_te]); Pb = m.predict_proba(EB[bd_te])
 out['bd_new'] = report(yb, Pb, classes, 'bd_new')
-Po = old.predict_proba(EB[bd_te]); po = [old_classes[k] for k in Po.argmax(1)]
-out['bd_old_top1'] = float(np.mean([p == bd[i]['cls'] for p, i in zip(po, bd_te)]))
+if not os.environ.get('EMB_BD'):
+    Po = old.predict_proba(EB[bd_te]); po = [old_classes[k] for k in Po.argmax(1)]
+    out['bd_old_top1'] = float(np.mean([p == bd[i]['cls'] for p, i in zip(po, bd_te)]))
 # per scene: one vote per scene (its first photo)
 first = {}
 for k, i in enumerate(bd_te): first.setdefault(bd[i]['group'], k)
 ks = sorted(first.values())
 out['bd_new_scene'] = report(yb[ks], Pb[ks], classes, 'bd_new_scene')
 for name in ['oi_old', 'oi_new', 'bd_new', 'bd_new_scene']:
-    r = out[name]; print(name, 'n', r['n'], 'top1', round(r['top1'], 3), [round(x, 3) for x in r['top1_ci']], 'top5', round(r['top5'], 3), 'macroR', round(r['macro_recall'], 3))
-print('bd old head top1', round(out['bd_old_top1'], 3))
+    r = out[name]
+    if r is None: continue
+    print(name, 'n', r['n'], 'top1', round(r['top1'], 3), [round(x, 3) for x in r['top1_ci']], 'top5', round(r['top5'], 3), 'macroR', round(r['macro_recall'], 3))
+if 'bd_old_top1' in out: print('bd old head top1', round(out['bd_old_top1'], 3))
 for c in bd_classes:
     v = out['bd_new']['per_class'][c]; print(f"{c:16s} n {v['n']:3d} R {v['recall'] or 0:.2f} P {v['precision'] or 0:.2f}", v['top_confusions'])
-json.dump(out, open('/tmp/w/nut/bd/bd_train_eval.json', 'w'), default=float)
+json.dump(out, open(os.environ.get('EVAL_OUT', '/tmp/w/nut/bd/bd_train_eval.json'), 'w'), default=float)

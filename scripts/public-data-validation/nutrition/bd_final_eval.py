@@ -1,12 +1,16 @@
 # Evaluates the exported ONNX files (int8 shipped, fp32 reference) and the previous 35-class int8
 # model on the held-out Open Images photos and the held-out Bangladeshi photos.
-import json, sys, collections, numpy as np, onnxruntime as ort
+import json, os, sys, collections, numpy as np, onnxruntime as ort
+# BACKBONE=dino evaluates the DINOv2-small model (export_dino) against the EfficientNetV2-B0 66-class
+# model it replaces; there is no fp32 file for it, so its int8 file is evaluated twice under both names.
+DINO = os.environ.get('BACKBONE') == 'dino'
 from PIL import Image
 sys.path.insert(0, '/tmp/w/nut')
 from evalcore import parse, report, wilson
-D = '/tmp/w/nut/export_bd'
+D = '/tmp/w/nut/export_dino' if DINO else '/tmp/w/nut/export_bd'
 classes = json.load(open(f'{D}/classes.json')); ci = {c: i for i, c in enumerate(classes)}
-old_classes = json.load(open('/tmp/w/nut/export/classes.json'))
+PREV_D = '/tmp/w/nut/export_bd' if DINO else '/tmp/w/nut/export'
+old_classes = json.load(open(f'{PREV_D}/classes.json'))
 meta = json.load(open('/tmp/w/nut/cls_effl0.json')); bd = json.load(open('/tmp/w/nut/bd/bd_meta.json'))
 oi_te = [(f"/tmp/w/nut/img/{m['key']}.jpg", parse(m['key'])[2], None) for m in meta if not m['key'].startswith('train_') and parse(m['key'])[2] in old_classes]
 bd_te = [(b['path'], b['cls'], b['group']) for b in bd if b['split'] == 'test']
@@ -18,7 +22,7 @@ def run(path, xs):
     so = ort.SessionOptions(); so.intra_op_num_threads = 4; s = ort.InferenceSession(path, so)
     return np.concatenate([s.run(None, {'image': x})[0] for x in xs])
 P = {}
-for name, path in [('int8', f'{D}/food_int8.onnx'), ('fp32', f'{D}/food_fp32.onnx'), ('prev_int8', '/tmp/w/nut/export/food_int8.onnx')]:
+for name, path in [('int8', f'{D}/food_int8.onnx'), ('fp32', f'{D}/food_int8.onnx' if DINO else f'{D}/food_fp32.onnx'), ('prev_int8', f'{PREV_D}/food_int8.onnx')]:
     for ds in ['oi', 'bd']: P[(name, ds)] = run(path, X[ds])
 res = {'classes': classes}
 for ds, items in [('oi', oi_te), ('bd', bd_te)]:
@@ -28,7 +32,7 @@ for ds, items in [('oi', oi_te), ('bd', bd_te)]:
         print(f'{name} {ds} n {r["n"]} top1 {r["top1"]:.4f} {tuple(round(v, 4) for v in r["top1_ci"])} top5 {r["top5"]:.4f} macroR {r["macro_recall"]:.4f}')
     Pp = P[('prev_int8', ds)]; pp = [old_classes[k] for k in Pp.argmax(1)]
     k = sum(p == c for p, (_, c, _) in zip(pp, items)); res[f'prev_int8_{ds}_top1'] = [k, len(items), wilson(k, len(items))]
-    print(f'previous 35-class int8 on {ds}: top1 {k}/{len(items)} = {k / len(items):.4f}')
+    print(f'previous int8 on {ds}: top1 {k}/{len(items)} = {k / len(items):.4f}')
 # Bangladeshi, one photo per scene
 first = {}
 for k, (_, _, g) in enumerate(bd_te): first.setdefault(g, k)
@@ -38,8 +42,13 @@ print(f'int8 bd one-per-scene n {r["n"]} top1 {r["top1"]:.4f} {tuple(round(v, 4)
 # What the app fills in at minScore 0.5 (dishes with USDA records)
 DISH = {'apple': 'apple', 'banana': 'banana', 'strawberry': 'strawberries', 'rice': 'rice', 'orange': 'orange', 'pear': 'pear', 'peach': 'peach',
         'pomegranate': 'pomegranate', 'tomato': 'tomato', 'dal': 'dal', 'fish_curry': 'fish_curry'}
-PREV = {'apple', 'banana', 'strawberry', 'rice'}
-FILLMIN = {'apple': 0.75, 'banana': 0.5, 'strawberry': 0.5, 'rice': 0.85, 'pear': 0.5, 'peach': 0.9, 'pomegranate': 0.5, 'tomato': 0.6, 'dal': 0.5, 'fish_curry': 0.5}
+PREV = set(DISH) - {'orange'} if DINO else {'apple', 'banana', 'strawberry', 'rice'}
+PREV_FILLMIN = {'apple': 0.75, 'banana': 0.5, 'strawberry': 0.5, 'rice': 0.85, 'pear': 0.5, 'peach': 0.9, 'pomegranate': 0.5, 'tomato': 0.6, 'dal': 0.5, 'fish_curry': 0.5}
+if DINO:
+    FILLMIN = {k: v['threshold'] for k, v in json.load(open('/tmp/w/nut/dino/fill_thresholds.json')).items() if v['threshold'] is not None}
+else:
+    FILLMIN = PREV_FILLMIN
+print('fillMin', FILLMIN)
 def fills(Pm, cls_list, items, mapping, fillmin=None):
     out = collections.Counter(); per = collections.defaultdict(lambda: [0, 0])
     for row, (_, c, _) in zip(Pm, items):
@@ -51,7 +60,7 @@ for ds, items in [('oi', oi_te), ('bd', bd_te)]:
     res[f'fills_new_flat05_{ds}'] = fills(P[('int8', ds)], classes, items, DISH)
     res[f'fills_new_{ds}'] = fills(P[('int8', ds)], classes, items, DISH, FILLMIN)
     print(ds, 'fills new at a flat 0.5 (not used)', res[f'fills_new_flat05_{ds}'][0])
-    res[f'fills_prev_{ds}'] = fills(P[('prev_int8', ds)], old_classes, items, PREV)
+    res[f'fills_prev_{ds}'] = fills(P[('prev_int8', ds)], old_classes, items, PREV, PREV_FILLMIN if DINO else None)
     print(ds, 'fills new', res[f'fills_new_{ds}'], '\n   prev', res[f'fills_prev_{ds}'])
 # Coverage vs accuracy, both sets together
 yall = np.concatenate([np.array([ci[c] for _, c, _ in oi_te]), yb]); Pall = np.concatenate([P[('int8', 'oi')], P[('int8', 'bd')]])
@@ -63,4 +72,5 @@ for t in [0, 0.5, 0.6, 0.7, 0.8, 0.9]:
 yo = np.array([ci[c] for _, c, _ in oi_te]); po = P[('int8', 'oi')].argmax(1)
 res['orange_as_apple'] = [int(((yo == ci['orange']) & (po == ci['apple'])).sum()), int((yo == ci['orange']).sum())]
 print('orange as apple', res['orange_as_apple'])
-json.dump(res, open('/tmp/w/nut/export_bd/final_eval.json', 'w'), default=float)
+res['fillMin'] = FILLMIN
+json.dump(res, open(f'{D}/final_eval.json', 'w'), default=float)

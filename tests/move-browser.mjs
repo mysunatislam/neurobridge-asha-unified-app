@@ -84,6 +84,13 @@ async function setup(init = null, viewport = { width: 1280, height: 900 }, { den
     ({ init, denyCamera }) => {
       window.__utterances = [];
       window.__denyCamera = denyCamera;
+      // The Next.js dev badge (only in `next dev`) sits over the bottom-left of a phone screen and
+      // swallows taps meant for the Start button. Hide it in the test; production builds have no badge.
+      document.addEventListener("DOMContentLoaded", () => {
+        const s = document.createElement("style");
+        s.textContent = "nextjs-portal{display:none!important}";
+        document.head.appendChild(s);
+      });
       window.SpeechSynthesisUtterance = class {
         constructor(text) {
           this.text = text;

@@ -29,7 +29,7 @@ async function init(base) {
   ort = await import(new URL("./ort.wasm.min.mjs", self.location.href).href);
   ort.env.wasm.numThreads = 1;
   ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/";
-  classifier = await ort.InferenceSession.create(new URL("../models/asha-food-66-int8.onnx", base || self.location.href).href, { executionProviders: ["wasm"], graphOptimizationLevel: "all" });
+  classifier = await ort.InferenceSession.create(new URL("../models/asha-food-dinov2s-66-int8.onnx", base || self.location.href).href, { executionProviders: ["wasm"], graphOptimizationLevel: "all" });
   try {
     faces = await V.FaceLandmarker.createFromOptions(files, opts("../neuroface/models/face_landmarker.task", { numFaces: 3, minFaceDetectionConfidence: 0.5 }));
   } catch {

@@ -5,10 +5,29 @@
 
 import { POSE_RULES, FACE_RULES, HAND_RULES, HOLD_RULES } from "./detectors.js";
 
-export const TRACKING_VERSION = "move-tracking/1.0.0";
+export const TRACKING_VERSION = "move-tracking/1.1.0";
 export const STALE_MS = 1000;
 export const MIN_VISIBILITY = 0.6;
 export const MAX_HEAD_DEGREES = 20;
+// Public-video checks (docs/MOVE_PUBLIC_VIDEO_VALIDATION.md) found counts start to be missed below
+// about 12 body readings a second (7.5 a second lost reps). The app asks for 20 a second.
+export const SLOW_POSE_FPS = 12;
+export const SLOW_POSE_NOTICE = Object.freeze({
+  en: "This phone is reading your movement slowly, so some reps may be missed. Close other apps or move slower.",
+  bn: "এই ফোন আপনার নড়াচড়া ধীরে পড়ছে, তাই কিছু গণনা বাদ যেতে পারে। অন্য অ্যাপ বন্ধ করুন বা ধীরে করুন।",
+});
+
+/**
+ * Body readings per second over the last `windowMs`, from the distinct pose timestamps seen.
+ * Returns null until at least 2 seconds of readings exist, so a slow start is not reported.
+ */
+export function poseRate(times, now, windowMs = 3000) {
+  const recent = (times ?? []).filter((t) => Number.isFinite(t) && t <= now && now - t <= windowMs);
+  if (recent.length < 2) return null;
+  const span = Math.max(...recent) - Math.min(...recent);
+  if (span < 2000) return null;
+  return (recent.length - 1) / (span / 1000);
+}
 export const LANDMARK_MAX = Object.freeze({ pose: 33, face: 478, hands: 42, total: 553 });
 
 /** MediaPipe Pose Landmarker indices (BlazePose topology). */
@@ -78,10 +97,10 @@ function words(parts, lang) {
  * Judge one engine frame for one exercise.
  * @param {any} frame FrameLandmarks from the engine's "landmarks" event, or null when nothing has arrived.
  * @param {string} exerciseId
- * @param {{now?: number, cameraOn?: boolean}} [options] `now` is on the same clock as frame.timestampMs (performance.now()).
- * @returns {{status: "READY"|"NO_PERSON"|"PARTIAL_VIEW"|"LOW_CONFIDENCE"|"TRACKING_LOST"|"OFF", points: {name:string, side?:string, visible:boolean, inFrame:boolean, visibility:number}[], hint: {en:string, bn:string}|null, lighting: "ok"|"dark"|"bright"|null, counts: {pose:number, face:number, hands:number, total:number}, side?: string}}
+ * @param {{now?: number, cameraOn?: boolean, poseFps?: number|null}} [options] `now` is on the same clock as frame.timestampMs (performance.now()); `poseFps` from poseRate().
+ * @returns {{status: "READY"|"NO_PERSON"|"PARTIAL_VIEW"|"LOW_CONFIDENCE"|"TRACKING_LOST"|"OFF", points: {name:string, side?:string, visible:boolean, inFrame:boolean, visibility:number}[], hint: {en:string, bn:string}|null, notice?: {en:string, bn:string}|null, lighting: "ok"|"dark"|"bright"|null, counts: {pose:number, face:number, hands:number, total:number}, side?: string}}
  */
-export function assessFrame(frame, exerciseId, { now, cameraOn = true } = {}) {
+export function assessFrame(frame, exerciseId, { now, cameraOn = true, poseFps = null } = {}) {
   const counts = landmarkCounts(frame);
   const req = requirements(exerciseId);
   const base = { points: [], counts, lighting: lightingOf(frame) };
@@ -121,7 +140,8 @@ export function assessFrame(frame, exerciseId, { now, cameraOn = true } = {}) {
     const unclear = best.points.filter((p) => !p.visible);
     if (unclear.length) return { ...base, status: "LOW_CONFIDENCE", points, side: best.side, hint: dark ?? { en: `I can't see your ${words(unclear.map((p) => p.part), "en")} clearly. Check nothing is blocking them and turn ${req.view === "front" ? "to face" : "side-on to"} the camera.`, bn: `আপনার ${words(unclear.map((p) => p.part), "bn")} পরিষ্কার দেখা যাচ্ছে না। সামনে কিছু আছে কিনা দেখুন।` } };
     if (dark) return { ...base, status: "LOW_CONFIDENCE", points, side: best.side, hint: dark };
-    return { ...base, status: "READY", points, side: best.side, hint: null };
+    const notice = Number.isFinite(poseFps) && poseFps < SLOW_POSE_FPS ? SLOW_POSE_NOTICE : null;
+    return { ...base, status: "READY", points, side: best.side, hint: null, notice };
   }
 
   if (req.module === "face") {

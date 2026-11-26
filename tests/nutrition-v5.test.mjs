@@ -50,11 +50,13 @@ test("only the recogniser's best guess can become a suggestion, and only foods w
   // is never filled in by the camera (too often confused with pomelo and lemon), only named.
   assert.deepEqual(suggestionsFrom([{ label: "orange", score: 0.95 }, { label: "apple", score: 0.04 }]), []);
   assert.equal(recognisedFrom([{ label: "orange", score: 0.62 }, { label: "apple", score: 0.31 }])[0].dishId, "orange");
-  // Per-food fill-in thresholds: apple needs 0.75, rice 0.85; dal and fish curry 0.5.
-  assert.deepEqual(suggestionsFrom([{ label: "apple", score: 0.7 }]), []);
-  assert.deepEqual(suggestionsFrom([{ label: "apple", score: 0.8 }]).map((x) => x.dishId), ["apple"]);
-  assert.deepEqual(suggestionsFrom([{ label: "rice", score: 0.8 }]), []);
-  assert.deepEqual(suggestionsFrom([{ label: "rice", score: 0.9 }]).map((x) => x.dishId), ["rice"]);
+  // Per-food fill-in thresholds: peach needs 0.65; apple, dal and fish curry 0.5. Rice, like orange, is
+  // named and offered as "+ add" but never filled in by the camera (it missed 90% on the holdout).
+  assert.deepEqual(suggestionsFrom([{ label: "peach", score: 0.6 }]), []);
+  assert.deepEqual(suggestionsFrom([{ label: "peach", score: 0.7 }]).map((x) => x.dishId), ["peach"]);
+  assert.deepEqual(suggestionsFrom([{ label: "apple", score: 0.55 }]).map((x) => x.dishId), ["apple"]);
+  assert.deepEqual(suggestionsFrom([{ label: "rice", score: 0.99 }]), []);
+  assert.equal(recognisedFrom([{ label: "rice", score: 0.9 }])[0].dishId, "rice");
   assert.deepEqual(suggestionsFrom([{ label: "dal", score: 0.55 }]).map((x) => x.dishId), ["dal"]);
   assert.deepEqual(suggestionsFrom([{ label: "fish_curry", score: 0.6 }]).map((x) => x.dishId), ["fish_curry"]);
   for (const label of Object.keys(FOOD_VISION.fillMin)) assert.ok(FOOD_VISION.dishFor[label], `${label} fills in only with a dish`);

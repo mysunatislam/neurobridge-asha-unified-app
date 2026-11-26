@@ -1,4 +1,4 @@
-# Move rep counting: public-video validation (2026-11-19, updated 2026-11-20)
+# Move rep counting: public-video validation (2026-11-19, updated 2026-11-20 and 2026-11-26)
 
 A "virtual" check of ASHA Move's camera rep counters on public exercise video, before real volunteers. It is **not clinical validation**: the clips are young people training at speed, filmed by anyone, while ASHA is built for slower, guided movement with a set-up step. Results: `docs/validation/move-public-video-results.json`; scripts: `scripts/public-data-validation/move/`.
 
@@ -78,7 +78,13 @@ With the fix (body in view, error per clip):
 - **Frame rate matters**: at 7.5 fps all three counters miss more reps, so ASHA should keep sampling pose at about 15 fps or more.
 - On every held-out clip (not only body in view), the fix also helped as recorded, because Kinetics clips already have missed frames: arm raise 1.62 → 1.46, squat 1.58 → 1.54, lunge through the squat counter 2.19 → 2.14.
 - **Trade-off:** false counts on a *different* exercise went up a little (for example the arm-raise counter on squat clips 2.5 → 3.3 per minute, the squat counter on push-ups 0.29 → 0.33). In ASHA the person picks the exercise first.
-- All Move unit tests pass, including a new one for a missed frame. `tests/move-browser.mjs` still times out on the same Bangla-layout click as before this change.
+- All Move unit tests pass, including a new one for a missed frame. `tests/move-browser.mjs` timed out on the same Bangla-layout click as before this change (fixed 2026-11-26, below).
+
+## Slow phones (2026-11-26, tracking 1.1.0)
+
+The app asks for a body reading every 50 ms (20 a second) while an exercise needs pose. Because 7.5 readings a second lost reps above, the session now measures how many distinct body readings it actually got over the last 3 seconds (`poseRate()` in `src/features/move/tracking.js`). Below 12 a second, while the person is fully in view, it shows a calm notice in English or Bangla: "This phone is reading your movement slowly, so some reps may be missed. Close other apps or move slower." Counting keeps going and the status stays "ready"; nothing is blocked. Unit test: `tests/move-tracking.test.mjs`. The 12 a second line is between the tested 7.5 (hurts) and 20 (fine); it has not been tested on real phones yet.
+
+`tests/move-browser.mjs` now passes end to end: the Next.js dev badge, which only exists in `next dev`, was covering the Bangla Start button on the phone layout, so the test hides it. Run it against `http://localhost:4180` (against `127.0.0.1` the dev page did not respond to taps in our runs).
 
 ## Limits, said plainly
 

@@ -12,7 +12,8 @@ Research scripts behind `docs/NUTRITION_PUBLIC_DATA_VALIDATION.md` and `docs/MOV
 6. `export.py`: backbone + head to ONNX. `quant.py`: int8 static quantisation with 300 training photos for calibration.
 7. `final_eval.py`: evaluates the first (35-class) ONNX file on the test photos, writes `docs/validation/nutrition-public-photo-results.json`.
 8. Bangladeshi update (2026-11-20): `bd_feats.py` (class mapping, embeddings), `bd_split.py` (near-duplicate scenes, grouped split), `bd_train.py` (head on Open Images + Bangladeshi), `bd_export.py` (ONNX + int8), `bd_fill_thresholds.py` (per-food fill-in scores from the training-side holdout), `bd_final_eval.py` (shipped file on both test sets, writes the data behind `docs/validation/nutrition-bangladeshi-results.json`).
-9. `scripts/verify-nutrition-records-csv.mjs` (in the repo's scripts folder) checks every food record against the USDA SR Legacy CSV download.
+9. DINOv2-small update (2026-11-26): `dino_feats.py` (DINOv2-small int8 embeddings for both photo sets; it reads `onnx/model_quantized.onnx` from huggingface.co/Xenova/dinov2-small, copied to `/mnt/user-data/uploads/datasets/dinov2-small/`), then `EMB_OI=/tmp/w/nut/dino/emb_oi.npy EMB_BD=/tmp/w/nut/dino/emb_bd.npy HEAD_OUT=/tmp/w/nut/dino/head.pkl EVAL_OUT=/tmp/w/nut/dino/train_eval.json python3 bd_train.py`, `BACKBONE=dino python3 bd_fill_thresholds.py`, `dino_export.py` (one ONNX with input scaling, pooling and head), `BACKBONE=dino python3 bd_final_eval.py` (data behind `docs/validation/nutrition-dinov2-results.json`).
+10. `scripts/verify-nutrition-records-csv.mjs` (in the repo's scripts folder) checks every food record against the USDA SR Legacy CSV download.
 
 ## Move (`move/`)
 

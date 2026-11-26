@@ -1,8 +1,40 @@
-# Nutrition food recognition: public-photo validation (2026-11-19, updated 2026-11-20)
+# Nutrition food recognition: public-photo validation (2026-11-19, updated 2026-11-20 and 2026-11-26)
 
 This is a "virtual" validation on openly licensed public photos, done before real volunteers. It is **not clinical validation** and it says nothing yet about Bangladeshi home meals, real phone cameras or real lighting. All numbers below come from `docs/validation/nutrition-public-photo-results.json` and can be re-run with `scripts/public-data-validation/nutrition/`.
 
-## Update 2026-11-20: Bangladeshi dishes, USDA records, per-food fill-in
+## Update 2026-11-26: a stronger image model fixes most curry mix-ups
+
+**Shipped model now:** `public/models/asha-food-dinov2s-66-int8.onnx` (24,577,140 bytes, sha256 `f9c0d2c6…69a7bb8`, checked by a unit test). The 65 foods + "not food" and the photo split are unchanged from 2026-11-20; only the image model under the head changed, from EfficientNetV2-B0 to **DINOv2-small** (Meta, Apache-2.0, the int8 ONNX published as `Xenova/dinov2-small`). The head was trained exactly as before (same grouped split, same weights, C and Bangladeshi weight picked again on the training-side holdout: C 32, weight 3). ASHA's input scaling, pooling ([CLS, mean of patch tokens], L2-normalised) and the head are built into the ONNX graph, so the app sends the same 224 × 224 RGB crop as before. Results: `docs/validation/nutrition-dinov2-results.json`; scripts `dino_feats.py`, `bd_train.py` (with `EMB_OI`/`EMB_BD`), `bd_fill_thresholds.py` and `bd_final_eval.py` (with `BACKBONE=dino`), `dino_export.py`.
+
+| Held-out set (int8 files) | EfficientNetV2-B0 (2026-11-20) | DINOv2-small (shipped) |
+| --- | --- | --- |
+| Bangladeshi photos (456), top-1 | 82.7% (78.9–85.9) | **97.1%** (95.2–98.3) |
+| Bangladeshi, one photo per scene (409), top-1 | 80.9% | **96.8%** (94.6–98.1) |
+| Open Images photos (4,951), top-1 | 75.9% (74.7–77.1) | **82.4%** (81.3–83.4) |
+| Open Images, top-5 | 95.4% | 98.0% |
+| Oranges suggested as apple | 0 of 186 | 0 of 186 |
+| Camera fill-ins, Open Images (right / wrong) | 565 / 55 | **699 / 49** |
+| Camera fill-ins, Bangladeshi (right / wrong) | 23 / 0 | 23 / 1 |
+
+Curries and other dishes that were mixed up (Bangladeshi held-out photos, recall):
+
+| Dish | n | Before | Now | Remaining mix-ups |
+| --- | ---: | ---: | ---: | --- |
+| dal | 14 | 36% | **93%** | haleem 1 |
+| chicken curry | 7 | 57% | **86%** | curry 1 |
+| prawn curry | 9 | 33% | **89%** | dal 1 |
+| egg curry | 9 | 100% | 100% | – |
+| fish curry | 10 | 100% | 100% | – |
+| bhorta | 9 | 56% | **89%** | potato 1 |
+| kabab | 36 | 72% | **97%** | prawn curry 1 |
+
+**Is 97% real?** DINOv2 is very good at matching near-identical photos, so a leak between training and test would inflate it more than before. We checked: on test photos whose closest training photo is not similar (DINOv2 cosine below 0.7, 92 photos), DINOv2 still gets 95.7% against 85.9% for EfficientNetV2-B0. The gain holds up, but the Bangladeshi sets are small and come from a few photographers, so real home meals will score lower.
+
+**Fill-in thresholds were chosen again** with the same rule (training-side holdout, lowest score from 0.5 where at least 90% of fills are right): apple, banana, strawberry, pear, pomegranate, tomato, dal and fish curry at 0.5, peach at 0.65. **Rice no longer reaches 90%** with this model (Open Images "rice" photos are often rice with curry), so, like orange, rice is named and offered as "+ Rice" for one tap but is not filled in by itself.
+
+**Cost.** The file is 24.6 MB instead of 7.2 MB (downloaded once, then cached by the service worker). In headless Chromium on the build server the browser worker gave the same best guess as Python on 78 of 80 photos, with a median of 360 ms per photo (it was 74 ms). Phones will be slower: a photo has 20 seconds, and live scanning already tells the person to tap Capture on a phone that is too slow.
+
+## Update 2026-11-20: Bangladeshi dishes, USDA records, per-food fill-in (model since replaced, see above)
 
 **Shipped model now:** `public/models/asha-food-66-int8.onnx` (7,162,275 bytes, sha256 `5c304684…44ef53`, checked by a unit test). Same EfficientNetV2-B0 backbone; the head was retrained on Open Images train photos **plus** two Bangladeshi photo sets, for **65 foods + "not food"**, 31 of them new Bangladeshi dishes. Results: `docs/validation/nutrition-bangladeshi-results.json`; scripts `scripts/public-data-validation/nutrition/bd_*.py`.
 

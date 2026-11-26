@@ -2,13 +2,15 @@
 # holdout bd_train.py uses: OI train 20%, BD train scenes 25%; head refit on the rest with the chosen
 # C and weight). For each food ASHA can fill in, the lowest score from 0.5 up (0.05 steps) where at
 # least 90% of fills on the holdout are right. A food that never gets there is named only, not filled.
-import json, sys, collections, numpy as np
+import json, os, sys, collections, numpy as np
+# BACKBONE=dino reads the DINOv2 embeddings and head evaluation instead of EfficientNetV2-B0's.
+DINO = os.environ.get('BACKBONE') == 'dino'
 sys.path.insert(0, '/tmp/w/nut')
 from evalcore import parse, wilson
 from sklearn.linear_model import LogisticRegression
-meta = json.load(open('/tmp/w/nut/cls_effl0.json')); E = np.load('/tmp/w/nut/emb_effv2b0.npy')
-bd = json.load(open('/tmp/w/nut/bd/bd_meta.json')); EB = np.load('/tmp/w/nut/bd/emb_bd_effv2b0.npy')
-ev = json.load(open('/tmp/w/nut/bd/bd_train_eval.json')); C, boost, classes = ev['C'], ev['bd_boost'], ev['classes']; ci = {c: k for k, c in enumerate(classes)}
+meta = json.load(open('/tmp/w/nut/cls_effl0.json')); E = np.load('/tmp/w/nut/dino/emb_oi.npy' if DINO else '/tmp/w/nut/emb_effv2b0.npy')
+bd = json.load(open('/tmp/w/nut/bd/bd_meta.json')); EB = np.load('/tmp/w/nut/dino/emb_bd.npy' if DINO else '/tmp/w/nut/bd/emb_bd_effv2b0.npy')
+ev = json.load(open('/tmp/w/nut/dino/train_eval.json' if DINO else '/tmp/w/nut/bd/bd_train_eval.json')); C, boost, classes = ev['C'], ev['bd_boost'], ev['classes']; ci = {c: k for k, c in enumerate(classes)}
 import pickle; _, old_classes = pickle.load(open('/tmp/w/nut/head_effv2b0.pkl', 'rb'))
 sp = [parse(m['key'])[0] for m in meta]; cl = [parse(m['key'])[2] for m in meta]
 oi_tr = [i for i, c in enumerate(cl) if sp[i] == 'train' and c in old_classes]
@@ -36,4 +38,4 @@ for lab in FILL:
         if chosen is None and n >= 5 and good / n >= 0.9: chosen = round(float(t), 2)
     out[lab] = {'threshold': chosen, 'holdout': rows}
     print(f'{lab:12s} threshold {chosen}  ', rows[:6])
-json.dump(out, open('/tmp/w/nut/bd/fill_thresholds.json', 'w'))
+json.dump(out, open('/tmp/w/nut/dino/fill_thresholds.json' if DINO else '/tmp/w/nut/bd/fill_thresholds.json', 'w'))

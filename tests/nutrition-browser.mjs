@@ -212,7 +212,7 @@ const jpeg = (page, w, h) =>
   assert.equal(entry.captureMethod, "live_scan");
   assert.equal(entry.photoStored, false);
   assert.equal(entry.items[0].canonical.databaseRecordId, "fdc:173944");
-  assert.equal(entry.items[0].canonical.modelId, "asha/food-effv2b0-oi-bd66-int8");
+  assert.equal(entry.items[0].canonical.modelId, "asha/food-dinov2s-oi-bd66-int8");
   assert.equal(entry.items[0].canonical.captureMethod, "live_scan");
   assert.equal(entry.items[0].canonical.dataVersion, "asha-nutrition-v5/2026-11-20");
   assert.ok(entry.items[0].sources.every((x) => x.databaseRecordId && x.verification), "every figure keeps its source id");
