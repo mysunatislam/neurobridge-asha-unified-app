@@ -186,6 +186,7 @@ export function createMairaProvider({
     language = "auto",
     module = "companion",
     signal,
+    timeoutMs = ASK_TIMEOUT_MS,
   } = {}) {
     const started = now();
     if (signal?.aborted) throw cancelled();
@@ -258,7 +259,7 @@ export function createMairaProvider({
           },
         }),
       },
-      ASK_TIMEOUT_MS,
+      Math.max(1000, Math.min(ASK_TIMEOUT_MS, Number(timeoutMs) || ASK_TIMEOUT_MS)),
       signal,
     );
     const text = data?.detail?.response ?? data?.response ?? data?.answer;

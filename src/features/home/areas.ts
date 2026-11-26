@@ -1,4 +1,4 @@
-import { ChatIcon, EyeIcon, HandIcon, HeartIcon, JournalIcon, KeyboardIcon, MicIcon, MoveIcon, NutritionIcon, PostureIcon, SparkIcon, TargetIcon } from "@/components/ui/icons";
+import { ChatIcon, EyeIcon, HandIcon, HeartIcon, JournalIcon, KeyboardIcon, MicIcon, MoveIcon, NutritionIcon, PostureIcon, ShieldIcon, SparkIcon, TargetIcon } from "@/components/ui/icons";
 
 // One list of what Asha offers, grouped by what the person wants to do. The home chooser, the
 // side menu and the area pages all read from here, so a module is defined once.
@@ -20,6 +20,7 @@ export const MODULES: Record<string, Module> = {
   assistant: { id: "assistant", label: "Talk to Asha", text: "Ask a question or just talk, in Bangla or English", href: `${P}/assistant`, icon: ChatIcon },
   move: { id: "move", label: "Move", text: "Guided exercise, one step at a time", href: `${P}/move`, icon: MoveIcon },
   nutrition: { id: "nutrition", label: "Nutrition", text: "Log a meal and see a sourced estimate", href: `${P}/nutrition`, icon: NutritionIcon },
+  outlook: { id: "outlook", label: "Health outlook", text: "Risk alerts from your signals, heat and air, with a plan for today", href: `${P}/outlook`, icon: ShieldIcon },
   vitalsense: { id: "vitalsense", label: "VitalSense", text: "Experimental pulse and breathing estimate", href: `${P}/vitalsense`, icon: HeartIcon },
   posture: { id: "posture", label: "Posture", text: "Position and comfort", href: `${P}/posture`, icon: PostureIcon },
   care: { id: "care", label: "Care journal", text: "Note how you feel, get support and prepare for your next visit", href: `${P}/care`, icon: JournalIcon },
@@ -38,7 +39,7 @@ export const AREAS: Area[] = [
   { id: "talk", label: "Talk to Asha", text: "Ask a question or just talk, in Bangla or English.", href: M.assistant.href, icon: ChatIcon, modules: [M.assistant] },
   { id: "exercise", label: "Exercise", text: "Short guided routines with a safety check first.", href: M.move.href, icon: MoveIcon, modules: [M.move] },
   { id: "food", label: "Nutrition", text: "Log what you ate and see a sourced calorie estimate.", href: M.nutrition.href, icon: NutritionIcon, modules: [M.nutrition] },
-  { id: "wellbeing", label: "Wellbeing", text: "Gentle checks for pulse, breathing and posture, and a journal for your care.", href: `${P}/wellbeing`, icon: HeartIcon, modules: [M.vitalsense, M.posture, M.care] },
+  { id: "wellbeing", label: "Wellbeing", text: "Risk alerts and a plan for today, gentle checks for pulse, breathing and posture, and a care journal.", href: `${P}/wellbeing`, icon: HeartIcon, modules: [M.outlook, M.vitalsense, M.posture, M.care] },
 ];
 
 export const areaById = (id: string) => AREAS.find((a) => a.id === id);
