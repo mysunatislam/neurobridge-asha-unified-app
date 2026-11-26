@@ -1,0 +1,646 @@
+{
+ "rep": [
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "split": "val",
+   "subset": "every clip",
+   "before": {
+    "N": 24,
+    "mae": 2,
+    "exact": 0.042,
+    "within1": 0.167,
+    "zero": 0.667,
+    "over": 0,
+    "countedOverTrue": 0.262,
+    "maeCI": [
+     1.67,
+     2.38
+    ]
+   },
+   "after": {
+    "N": 24,
+    "mae": 1.58,
+    "exact": 0.167,
+    "within1": 0.417,
+    "zero": 0.5,
+    "over": 0,
+    "countedOverTrue": 0.415,
+    "maeCI": [
+     1.21,
+     2.08
+    ]
+   }
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "split": "val",
+   "subset": "body in view ≥90% of frames",
+   "before": {
+    "N": 11,
+    "mae": 1.64,
+    "exact": 0.091,
+    "within1": 0.364,
+    "zero": 0.273,
+    "over": 0,
+    "countedOverTrue": 0.486,
+    "maeCI": [
+     1.18,
+     2.09
+    ]
+   },
+   "after": {
+    "N": 11,
+    "mae": 0.82,
+    "exact": 0.364,
+    "within1": 0.818,
+    "zero": 0,
+    "over": 0,
+    "countedOverTrue": 0.743,
+    "maeCI": [
+     0.36,
+     1.27
+    ]
+   }
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "split": "all",
+   "subset": "every clip",
+   "before": {
+    "N": 90,
+    "mae": 2.3,
+    "exact": 0.033,
+    "within1": 0.178,
+    "zero": 0.7,
+    "over": 0,
+    "countedOverTrue": 0.169,
+    "maeCI": [
+     2.04,
+     2.57
+    ]
+   },
+   "after": {
+    "N": 90,
+    "mae": 2,
+    "exact": 0.078,
+    "within1": 0.367,
+    "zero": 0.533,
+    "over": 0,
+    "countedOverTrue": 0.277,
+    "maeCI": [
+     1.72,
+     2.29
+    ]
+   }
+  },
+  {
+   "cls": "squat",
+   "ex": "squat",
+   "split": "all",
+   "subset": "body in view ≥90% of frames",
+   "before": {
+    "N": 43,
+    "mae": 2.14,
+    "exact": 0.07,
+    "within1": 0.302,
+    "zero": 0.512,
+    "over": 0,
+    "countedOverTrue": 0.276,
+    "maeCI": [
+     1.7,
+     2.58
+    ]
+   },
+   "after": {
+    "N": 43,
+    "mae": 1.53,
+    "exact": 0.163,
+    "within1": 0.674,
+    "zero": 0.186,
+    "over": 0,
+    "countedOverTrue": 0.48,
+    "maeCI": [
+     1.09,
+     1.98
+    ]
+   }
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "split": "val",
+   "subset": "every clip",
+   "before": {
+    "N": 32,
+    "mae": 2.75,
+    "exact": 0.031,
+    "within1": 0.438,
+    "zero": 0.375,
+    "over": 0,
+    "countedOverTrue": 0.254,
+    "maeCI": [
+     1.97,
+     3.5
+    ]
+   },
+   "after": {
+    "N": 32,
+    "mae": 2.34,
+    "exact": 0.125,
+    "within1": 0.531,
+    "zero": 0.281,
+    "over": 0,
+    "countedOverTrue": 0.364,
+    "maeCI": [
+     1.59,
+     3.09
+    ]
+   }
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "split": "val",
+   "subset": "body in view ≥90% of frames",
+   "before": {
+    "N": 21,
+    "mae": 2.43,
+    "exact": 0.048,
+    "within1": 0.571,
+    "zero": 0.19,
+    "over": 0,
+    "countedOverTrue": 0.346,
+    "maeCI": [
+     1.57,
+     3.38
+    ]
+   },
+   "after": {
+    "N": 21,
+    "mae": 1.9,
+    "exact": 0.143,
+    "within1": 0.714,
+    "zero": 0.095,
+    "over": 0,
+    "countedOverTrue": 0.487,
+    "maeCI": [
+     1.14,
+     2.81
+    ]
+   }
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "split": "all",
+   "subset": "every clip",
+   "before": {
+    "N": 145,
+    "mae": 3.02,
+    "exact": 0.048,
+    "within1": 0.297,
+    "zero": 0.476,
+    "over": 0.007,
+    "countedOverTrue": 0.234,
+    "maeCI": [
+     2.68,
+     3.41
+    ]
+   },
+   "after": {
+    "N": 145,
+    "mae": 2.58,
+    "exact": 0.124,
+    "within1": 0.4,
+    "zero": 0.331,
+    "over": 0.007,
+    "countedOverTrue": 0.346,
+    "maeCI": [
+     2.23,
+     2.97
+    ]
+   }
+  },
+  {
+   "cls": "push_up",
+   "ex": "wall_pushup",
+   "split": "all",
+   "subset": "body in view ≥90% of frames",
+   "before": {
+    "N": 101,
+    "mae": 2.87,
+    "exact": 0.069,
+    "within1": 0.366,
+    "zero": 0.356,
+    "over": 0.01,
+    "countedOverTrue": 0.294,
+    "maeCI": [
+     2.51,
+     3.35
+    ]
+   },
+   "after": {
+    "N": 101,
+    "mae": 2.29,
+    "exact": 0.158,
+    "within1": 0.505,
+    "zero": 0.178,
+    "over": 0.01,
+    "countedOverTrue": 0.439,
+    "maeCI": [
+     1.94,
+     2.7
+    ]
+   }
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "split": "val",
+   "subset": "every clip",
+   "before": {
+    "N": 39,
+    "mae": 1.77,
+    "exact": 0.205,
+    "within1": 0.564,
+    "zero": 0.333,
+    "over": 0,
+    "countedOverTrue": 0.43,
+    "maeCI": [
+     1.23,
+     2.44
+    ]
+   },
+   "after": {
+    "N": 39,
+    "mae": 1.62,
+    "exact": 0.231,
+    "within1": 0.615,
+    "zero": 0.282,
+    "over": 0,
+    "countedOverTrue": 0.479,
+    "maeCI": [
+     1.1,
+     2.28
+    ]
+   }
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "split": "val",
+   "subset": "body in view ≥90% of frames",
+   "before": {
+    "N": 20,
+    "mae": 1.6,
+    "exact": 0.3,
+    "within1": 0.65,
+    "zero": 0.2,
+    "over": 0,
+    "countedOverTrue": 0.536,
+    "maeCI": [
+     0.8,
+     2.7
+    ]
+   },
+   "after": {
+    "N": 20,
+    "mae": 1.35,
+    "exact": 0.35,
+    "within1": 0.7,
+    "zero": 0.15,
+    "over": 0,
+    "countedOverTrue": 0.609,
+    "maeCI": [
+     0.65,
+     2.4
+    ]
+   }
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "split": "all",
+   "subset": "every clip",
+   "before": {
+    "N": 161,
+    "mae": 2.21,
+    "exact": 0.174,
+    "within1": 0.484,
+    "zero": 0.348,
+    "over": 0,
+    "countedOverTrue": 0.398,
+    "maeCI": [
+     1.92,
+     2.53
+    ]
+   },
+   "after": {
+    "N": 161,
+    "mae": 2.1,
+    "exact": 0.18,
+    "within1": 0.509,
+    "zero": 0.304,
+    "over": 0,
+    "countedOverTrue": 0.428,
+    "maeCI": [
+     1.81,
+     2.41
+    ]
+   }
+  },
+  {
+   "cls": "front_raises",
+   "ex": "arm_raise",
+   "split": "all",
+   "subset": "body in view ≥90% of frames",
+   "before": {
+    "N": 113,
+    "mae": 1.94,
+    "exact": 0.212,
+    "within1": 0.549,
+    "zero": 0.274,
+    "over": 0,
+    "countedOverTrue": 0.482,
+    "maeCI": [
+     1.62,
+     2.36
+    ]
+   },
+   "after": {
+    "N": 113,
+    "mae": 1.8,
+    "exact": 0.221,
+    "within1": 0.566,
+    "zero": 0.221,
+    "over": 0,
+    "countedOverTrue": 0.52,
+    "maeCI": [
+     1.5,
+     2.2
+    ]
+   }
+  },
+  {
+   "cls": "lunge",
+   "ex": "squat",
+   "split": "val",
+   "subset": "every clip",
+   "before": {
+    "N": 37,
+    "mae": 2.59,
+    "exact": 0.081,
+    "within1": 0.216,
+    "zero": 0.595,
+    "over": 0,
+    "countedOverTrue": 0.207,
+    "maeCI": [
+     2.03,
+     3.16
+    ]
+   },
+   "after": {
+    "N": 37,
+    "mae": 2.19,
+    "exact": 0.081,
+    "within1": 0.324,
+    "zero": 0.405,
+    "over": 0,
+    "countedOverTrue": 0.331,
+    "maeCI": [
+     1.7,
+     2.7
+    ]
+   }
+  },
+  {
+   "cls": "lunge",
+   "ex": "squat",
+   "split": "val",
+   "subset": "body in view ≥90% of frames",
+   "before": {
+    "N": 26,
+    "mae": 2.5,
+    "exact": 0.077,
+    "within1": 0.231,
+    "zero": 0.538,
+    "over": 0,
+    "countedOverTrue": 0.244,
+    "maeCI": [
+     1.96,
+     3.15
+    ]
+   },
+   "after": {
+    "N": 26,
+    "mae": 1.92,
+    "exact": 0.077,
+    "within1": 0.385,
+    "zero": 0.269,
+    "over": 0,
+    "countedOverTrue": 0.419,
+    "maeCI": [
+     1.5,
+     2.42
+    ]
+   }
+  },
+  {
+   "cls": "lunge",
+   "ex": "squat",
+   "split": "all",
+   "subset": "every clip",
+   "before": {
+    "N": 152,
+    "mae": 2.7,
+    "exact": 0.053,
+    "within1": 0.211,
+    "zero": 0.592,
+    "over": 0,
+    "countedOverTrue": 0.197,
+    "maeCI": [
+     2.45,
+     2.96
+    ]
+   },
+   "after": {
+    "N": 152,
+    "mae": 2.34,
+    "exact": 0.072,
+    "within1": 0.336,
+    "zero": 0.447,
+    "over": 0,
+    "countedOverTrue": 0.305,
+    "maeCI": [
+     2.09,
+     2.58
+    ]
+   }
+  },
+  {
+   "cls": "lunge",
+   "ex": "squat",
+   "split": "all",
+   "subset": "body in view ≥90% of frames",
+   "before": {
+    "N": 101,
+    "mae": 2.46,
+    "exact": 0.069,
+    "within1": 0.257,
+    "zero": 0.485,
+    "over": 0,
+    "countedOverTrue": 0.264,
+    "maeCI": [
+     2.16,
+     2.81
+    ]
+   },
+   "after": {
+    "N": 101,
+    "mae": 2.03,
+    "exact": 0.089,
+    "within1": 0.416,
+    "zero": 0.327,
+    "over": 0,
+    "countedOverTrue": 0.392,
+    "maeCI": [
+     1.73,
+     2.37
+    ]
+   }
+  }
+ ],
+ "cross": [
+  {
+   "clips": "front_raises",
+   "detector": "squat",
+   "before": {
+    "clips": 161,
+    "clipsWithFalseCount": 2,
+    "falseReps": 6,
+    "falseRepsPerMinute": 0.22
+   },
+   "after": {
+    "clips": 161,
+    "clipsWithFalseCount": 3,
+    "falseReps": 8,
+    "falseRepsPerMinute": 0.3
+   }
+  },
+  {
+   "clips": "push_up",
+   "detector": "squat",
+   "before": {
+    "clips": 145,
+    "clipsWithFalseCount": 2,
+    "falseReps": 2,
+    "falseRepsPerMinute": 0.08
+   },
+   "after": {
+    "clips": 145,
+    "clipsWithFalseCount": 6,
+    "falseReps": 7,
+    "falseRepsPerMinute": 0.29
+   }
+  },
+  {
+   "clips": "squat",
+   "detector": "wall_pushup",
+   "before": {
+    "clips": 90,
+    "clipsWithFalseCount": 9,
+    "falseReps": 12,
+    "falseRepsPerMinute": 0.8
+   },
+   "after": {
+    "clips": 90,
+    "clipsWithFalseCount": 10,
+    "falseReps": 16,
+    "falseRepsPerMinute": 1.07
+   }
+  },
+  {
+   "clips": "front_raises",
+   "detector": "wall_pushup",
+   "before": {
+    "clips": 161,
+    "clipsWithFalseCount": 76,
+    "falseReps": 143,
+    "falseRepsPerMinute": 5.33
+   },
+   "after": {
+    "clips": 161,
+    "clipsWithFalseCount": 84,
+    "falseReps": 173,
+    "falseRepsPerMinute": 6.45
+   }
+  },
+  {
+   "clips": "squat",
+   "detector": "arm_raise",
+   "before": {
+    "clips": 90,
+    "clipsWithFalseCount": 16,
+    "falseReps": 27,
+    "falseRepsPerMinute": 1.8
+   },
+   "after": {
+    "clips": 90,
+    "clipsWithFalseCount": 21,
+    "falseReps": 38,
+    "falseRepsPerMinute": 2.53
+   }
+  },
+  {
+   "clips": "lunge",
+   "detector": "arm_raise",
+   "before": {
+    "clips": 152,
+    "clipsWithFalseCount": 24,
+    "falseReps": 41,
+    "falseRepsPerMinute": 1.62
+   },
+   "after": {
+    "clips": 152,
+    "clipsWithFalseCount": 29,
+    "falseReps": 52,
+    "falseRepsPerMinute": 2.05
+   }
+  },
+  {
+   "clips": "situp",
+   "detector": "squat",
+   "before": {
+    "clips": 32,
+    "clipsWithFalseCount": 1,
+    "falseReps": 1,
+    "falseRepsPerMinute": 0.19
+   },
+   "after": {
+    "clips": 32,
+    "clipsWithFalseCount": 4,
+    "falseReps": 5,
+    "falseRepsPerMinute": 0.94
+   }
+  },
+  {
+   "clips": "jumping_jacks",
+   "detector": "squat",
+   "before": {
+    "clips": 33,
+    "clipsWithFalseCount": 1,
+    "falseReps": 3,
+    "falseRepsPerMinute": 0.55
+   },
+   "after": {
+    "clips": 33,
+    "clipsWithFalseCount": 4,
+    "falseReps": 6,
+    "falseRepsPerMinute": 1.09
+   }
+  }
+ ]
+}

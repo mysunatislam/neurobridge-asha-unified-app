@@ -82,8 +82,8 @@ const ON_DEVICE = [
   ],
   ["YOLO26n-pose (ONNX Runtime Web)", "Optional pose tracking"],
   [
-    "EfficientNet-Lite0 (int8)",
-    "Experimental food suggestions. It is not trained on food.",
+    "ASHA food recogniser (DINOv2-small, int8, ONNX Runtime Web)",
+    "Experimental food suggestions: 65 foods, 31 of them Bangladeshi. You always confirm.",
   ],
 ];
 

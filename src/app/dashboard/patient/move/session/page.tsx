@@ -17,7 +17,7 @@ import { MoveOverlay } from "@/features/move/MoveOverlay";
 import { lockoutActive, PAIN_AREAS, SCREEN_QUESTIONS, screen, SESSION_SYMPTOMS } from "@/features/move/safety.js";
 import { TRACKING_LOST_MESSAGE, TRACKING_LOST_MESSAGE_BN, WATCHING, WorkoutSession } from "@/features/move/session.js";
 import { moveStore, useMove, type Answer, type Lang, type Summary } from "@/features/move/store";
-import { assessFrame, faceInput, handInput, inputTimestamp, LANDMARK_MAX, poseInput, statusLabel, trackingModules } from "@/features/move/tracking.js";
+import { assessFrame, faceInput, handInput, inputTimestamp, LANDMARK_MAX, poseInput, poseRate, statusLabel, trackingModules } from "@/features/move/tracking.js";
 import { BASE, Choice, tx, UrgentCard } from "@/features/move/ui";
 import { CameraView } from "@/features/perception/CameraView";
 import { useActiveModule, usePerception, usePerceptionEvent } from "@/features/perception/PerceptionProvider";
@@ -46,6 +46,7 @@ type View = {
   status: string;
   points: { name: string; side?: string; visible: boolean; inFrame: boolean; visibility: number }[];
   hint: Text | null;
+  notice?: Text | null;
   lighting: "ok" | "dark" | "bright" | null;
   counts: { pose: number; face: number; hands: number; total: number };
   side?: string;
@@ -112,6 +113,8 @@ export default function LiveSession() {
   const detector = useRef<{ key: string; count: number; value: Detector | null }>({ key: "", count: -1, value: null });
   const lastResult = useRef<DetectorResult | null>(null);
   const lastFrame = useRef<FrameLandmarks | null>(null);
+  // Distinct body-reading times from the last few seconds, to notice a phone that reads too slowly.
+  const poseTimes = useRef<number[]>([]);
   const lastInput = useRef<number | null>(null);
   const viewRef = useRef<View | null>(null);
   const [, render] = useState(0);
@@ -206,7 +209,7 @@ export default function LiveSession() {
         const key = `${cur.detectorEpoch}:${w}`;
         if (feedClock.current.key !== key) feedClock.current = { key, at: now };
         else if (now - feedClock.current.at > 1500) cur.observe({ valid: false, t: now, reason: "No camera frames" });
-        viewRef.current = assessFrame(lastFrame.current, w, { now, cameraOn: cameraRef.current === "on" }) as View;
+        viewRef.current = assessFrame(lastFrame.current, w, { now, cameraOn: cameraRef.current === "on", poseFps: poseRate(poseTimes.current, lastFrame.current?.timestampMs ?? now) }) as View;
       } else viewRef.current = null;
       announce();
       persist(before !== sig(cur));
@@ -252,6 +255,11 @@ export default function LiveSession() {
   const feed = useCallback(
     (frame: FrameLandmarks) => {
       lastFrame.current = frame;
+      const pt = frame.pose ? (frame.poseAt ?? frame.timestampMs) : null;
+      if (Number.isFinite(pt) && pt !== poseTimes.current[poseTimes.current.length - 1]) {
+        poseTimes.current.push(pt as number);
+        if (poseTimes.current.length > 120) poseTimes.current.splice(0, poseTimes.current.length - 120);
+      }
       const cur = session.current;
       if (!cur) return;
       const w = watchId(cur);
@@ -596,7 +604,7 @@ export default function LiveSession() {
   const label = statusLabel(view?.status ?? "OFF", { mode: s.mode, cameraOn: camera === "on" });
   const timed = !!s.holdTarget;
   const upNext = s.upNext as { exerciseId: string; set: number } | null;
-  const cue = !showCamera || camera !== "on" || paused ? null : lost ? tx(lang, TRACKING_LOST_MESSAGE, TRACKING_LOST_MESSAGE_BN) : view && view.status !== "READY" && view.hint ? pick(view.hint, lang) : r?.reason ? cueText(r.reason, lang) : null;
+  const cue = !showCamera || camera !== "on" || paused ? null : lost ? tx(lang, TRACKING_LOST_MESSAGE, TRACKING_LOST_MESSAGE_BN) : view && view.status !== "READY" && view.hint ? pick(view.hint, lang) : r?.reason ? cueText(r.reason, lang) : view?.notice ? pick(view.notice, lang) : null;
   const cueDetail = lost && view?.hint ? pick(view.hint, lang) : null;
   const stage: Record<string, string> = {
     WARM_UP: tx(lang, "Warm-up", "ওয়ার্ম-আপ"),

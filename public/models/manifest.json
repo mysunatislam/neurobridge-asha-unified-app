@@ -27,7 +27,16 @@
       "downloadedAt": "2026-11-10",
       "publishedAt": "2023-04-26",
       "license": "Apache-2.0 (stated in the model's embedded TFLite metadata)",
-      "use": "Nutrition: experimental whole-fruit suggestions only (ImageNet classes banana, Granny Smith, strawberry)"
+      "use": "No longer used by Nutrition since 2026-11-19 (replaced by ASHA's own food model, now models/asha-food-dinov2s-66-int8.onnx); kept for older cached pages."
+    },
+    {
+      "file": "models/asha-food-dinov2s-66-int8.onnx",
+      "bytes": 24577140,
+      "sha256": "f9c0d2c691f96cd64eb61a226dfea469f0100f272a11b5090d6f7e18d69a7bb8",
+      "source": "Built by ASHA: DINOv2-small (Meta, https://huggingface.co/facebook/dinov2-small) as the int8 dynamically quantised ONNX from https://huggingface.co/Xenova/dinov2-small (onnx/model_quantized.onnx), with ASHA's input normalisation, [CLS, mean patch] pooling and a logistic-regression head trained on Open Images V7 food photos, BD-Food33 and Bangladeshi Street Food photos added to the graph. Scripts: scripts/public-data-validation/nutrition/ (dino_feats.py, bd_train.py, dino_export.py)",
+      "createdAt": "2026-11-26",
+      "license": "Backbone Apache-2.0; training images: Open Images V7 (CC BY 2.0 images, CC BY 4.0 labels), BD-Food33 (CC0), Bangladeshi Street Food (CC BY 4.0)",
+      "use": "Nutrition: on-device food recognition (65 foods incl. 31 Bangladeshi dishes + not food), experimental, always confirmed by the person. Replaced models/asha-food-66-int8.onnx (EfficientNetV2-B0) on 2026-11-26."
     }
   ]
 }

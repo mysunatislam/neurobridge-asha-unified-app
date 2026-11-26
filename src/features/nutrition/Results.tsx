@@ -184,6 +184,7 @@ export function ItemCard({ r, lang, eaten, onEaten }: { r: ItemResult; lang: str
 function verificationText(v: string, lang: string) {
   if (v === "api_verified") return tx(lang, "checked against the USDA API", "USDA API-তে যাচাই করা");
   if (v === "cross_checked") return tx(lang, "cross-checked copy, API check pending", "প্রতিলিপি মিলিয়ে দেখা, API যাচাই বাকি");
+  if (v === "csv_verified") return tx(lang, "checked against the USDA download, API check pending", "USDA-র ডাউনলোড করা তথ্যে যাচাই করা, API যাচাই বাকি");
   if (v === "entered_by_person") return tx(lang, "typed in by you", "আপনার লেখা");
   return v;
 }

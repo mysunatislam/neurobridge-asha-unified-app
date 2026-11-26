@@ -212,9 +212,9 @@ const jpeg = (page, w, h) =>
   assert.equal(entry.captureMethod, "live_scan");
   assert.equal(entry.photoStored, false);
   assert.equal(entry.items[0].canonical.databaseRecordId, "fdc:173944");
-  assert.equal(entry.items[0].canonical.modelId, "mediapipe/efficientnet_lite0-int8");
+  assert.equal(entry.items[0].canonical.modelId, "asha/food-dinov2s-oi-bd66-int8");
   assert.equal(entry.items[0].canonical.captureMethod, "live_scan");
-  assert.equal(entry.items[0].canonical.dataVersion, "asha-nutrition-v5/2026-11-10");
+  assert.equal(entry.items[0].canonical.dataVersion, "asha-nutrition-v5/2026-11-20");
   assert.ok(entry.items[0].sources.every((x) => x.databaseRecordId && x.verification), "every figure keeps its source id");
   assert.equal(JSON.stringify(s).includes("blob:"), false, "no photo reference is stored");
   // "Ask ASHA" opens the assistant with the question typed in but not sent.
@@ -228,11 +228,44 @@ const jpeg = (page, w, h) =>
   await context.close();
 }
 
+// ---------- 1b. The orange bug: best guess "orange" is named, never turned into apple, and not filled in ----------
+{
+  const { context, page } = await setup();
+  await page.goto(URL_);
+  await page.evaluate(() => window.__script({ categories: [{ label: "orange", score: 0.62 }, { label: "apple", score: 0.31 }, { label: "lemon_lime", score: 0.04 }] }));
+  await page.getByTestId("nutrition-upload").click();
+  await page.getByTestId("nutrition-file").setInputFiles({ name: "orange.jpg", mimeType: "image/jpeg", buffer: Buffer.from(await jpeg(page, 800, 600), "base64") });
+  await screenIs(page, "IMAGE_VALIDATED");
+  await page.getByTestId("nutrition-use-photo").click();
+  await screenIs(page, "FOOD_REVIEW");
+  await page.getByTestId("nutrition-recognised").getByText("Orange (or malta)").waitFor();
+  await page.getByTestId("nutrition-recognised").getByText("tap + Orange or malta below").waitFor();
+  assert.equal(await page.locator("[data-testid=nutrition-chips] li[data-dish]").count(), 0, "no apple (or any food) added for an orange");
+  await page.locator("[data-testid=nutrition-add] button[data-dish=orange]").click();
+  await page.locator("[data-testid=nutrition-chips] li[data-dish=orange]").waitFor();
+  await context.close();
+}
+
+// ---------- 1c. A best guess with no nutrition record is named, and nothing is added ----------
+{
+  const { context, page } = await setup();
+  await page.goto(URL_);
+  await page.evaluate(() => window.__script({ categories: [{ label: "lemon_lime", score: 0.62 }, { label: "apple", score: 0.31 }, { label: "orange", score: 0.04 }] }));
+  await page.getByTestId("nutrition-upload").click();
+  await page.getByTestId("nutrition-file").setInputFiles({ name: "lemon.jpg", mimeType: "image/jpeg", buffer: Buffer.from(await jpeg(page, 800, 600), "base64") });
+  await screenIs(page, "IMAGE_VALIDATED");
+  await page.getByTestId("nutrition-use-photo").click();
+  await screenIs(page, "FOOD_REVIEW");
+  await page.getByTestId("nutrition-recognised").getByText("Lemon or lime").waitFor();
+  assert.equal(await page.locator("[data-testid=nutrition-chips] li[data-dish]").count(), 0, "no apple (or any food) added for a lemon");
+  await context.close();
+}
+
 // ---------- 2. Upload: rotate, no suggestion, rice + dal + fish curry kept separate, oil changes, unknown sodium ----------
 {
   const { context, page } = await setup();
   await page.goto(URL_);
-  await page.evaluate(() => window.__script({ categories: [{ label: "cheeseburger", score: 0.95 }] }));
+  await page.evaluate(() => window.__script({ categories: [{ label: "not_food", score: 0.95 }] }));
   await page.getByTestId("nutrition-upload").click();
   await page.getByTestId("nutrition-file").setInputFiles({ name: "plate.jpg", mimeType: "image/jpeg", buffer: Buffer.from(await jpeg(page, 800, 600), "base64") });
   await screenIs(page, "IMAGE_VALIDATED");

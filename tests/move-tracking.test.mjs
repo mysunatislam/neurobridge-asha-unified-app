@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { assessFrame, projectPoint, statusLabel, trackingModules, landmarkCounts, LANDMARK_MAX, requirements, relevantPoseIndices } from "../src/features/move/tracking.js";
+import { assessFrame, projectPoint, statusLabel, trackingModules, landmarkCounts, LANDMARK_MAX, requirements, relevantPoseIndices, poseRate, SLOW_POSE_FPS } from "../src/features/move/tracking.js";
 import { createDetector, fingerOpenness, isTracked, isExperimental, detectorKind } from "../src/features/move/detectors.js";
 import { EXERCISES } from "../src/features/move/catalog.js";
 import { LESSONS, VIEWPOINTS, lessonFor } from "../src/features/move/lessons.js";
@@ -204,4 +204,17 @@ test("Every exercise has a bilingual lesson, a 5-15 s demonstration and captions
 test("Lessons make no promised body changes", () => {
   const all = JSON.stringify(LESSONS).toLowerCase();
   for (const banned of ["burn fat", "lose fat", "slim", "sculpt", "tone your", "calorie", "guarantee", "cure"]) assert.ok(!all.includes(banned), banned);
+});
+
+test("A phone reading the body too slowly gets a notice, but tracking stays ready", () => {
+  const every = (ms, n) => Array.from({ length: n }, (_, i) => 10000 + i * ms);
+  assert.equal(poseRate(every(50, 10), 10450), null, "under 2 s of readings: no judgement yet");
+  assert.ok(Math.abs(poseRate(every(50, 60), 10000 + 59 * 50) - 20) < 0.01);
+  assert.ok(poseRate(every(133, 23), 10000 + 22 * 133) < SLOW_POSE_FPS);
+  const slow = assessFrame(frame(), "chair_squat", { now: 1000, poseFps: 7.5 });
+  assert.equal(slow.status, "READY");
+  assert.match(slow.notice.en, /slowly/);
+  assert.ok(slow.notice.bn);
+  assert.equal(assessFrame(frame(), "chair_squat", { now: 1000, poseFps: 20 }).notice, null);
+  assert.equal(assessFrame(frame(), "chair_squat", { now: 1000 }).notice, null);
 });
